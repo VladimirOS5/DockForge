@@ -3,7 +3,7 @@
 Панель задач для Windows 11, вдохновлённая macOS Dock, но лучше и функциональнее.
 
 ## Статус
-🚧 Альфа-разработка — Чат 03 завершён (иконки, ресурсы, badge)
+🚧 Альфа-разработка — Чат 04 завершён (анимационный движок)
 
 ## Требования
 - Windows 11
@@ -32,7 +32,10 @@ cmake --build . --config Release
 
 **Управление:**
 - **F1** — переключить эффект фона (Acrylic / Liquid Glass / Solid)
-- **Наведение мыши** — magnification иконок
+- **Наведение** — magnification иконок с easing (как на macOS)
+- **ЛКМ** — прыжок иконки (jump + bounce)
+- **Двойной ЛКМ** — genie effect
+- **ПКМ** — badge pulse
 
 ## Архитектура
 ```
@@ -40,9 +43,11 @@ src/
   Core/       — Application, DockWindow, Main
   Shell/      — TaskbarHider
   Renderer/   — D2DRenderer, EffectRenderer, Effects, FrameLimiter,
-                IconLoader, TextureAtlas, AnimatedIcon, BadgeRenderer
+                IconLoader, TextureAtlas, AnimatedIcon, BadgeRenderer,
+                TweenEngine
   Utils/      — Logger, Config, ScreenCapture
 docs/chats/   — Логи разработки
+PLAN.md       — План по чатам
 ```
 
 ## План разработки
@@ -51,7 +56,7 @@ docs/chats/   — Логи разработки
 | 01 | Скелет проекта | ✅ |
 | 02 | Рендер-движок и эффекты | ✅ |
 | 03 | Иконки и ресурсы | ✅ |
-| 04 | Анимационный движок | ⏳ |
+| 04 | Анимационный движок | ✅ |
 | 05 | Shell интеграция | ⏳ |
 | 06 | Трей и меню Пуск | ⏳ |
 | 07 | Настройки и темы | ⏳ |

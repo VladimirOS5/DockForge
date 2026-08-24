@@ -8,6 +8,7 @@
 #include "../Renderer/TextureAtlas.h"
 #include "../Renderer/AnimatedIcon.h"
 #include "../Renderer/BadgeRenderer.h"
+#include "../Renderer/TweenEngine.h"
 #include "../Utils/Config.h"
 #include <memory>
 #include <vector>
@@ -22,10 +23,24 @@ struct DockIcon {
     int badgeCount = 0;
     bool isPinned = true;
     bool isRunning = false;
-    float targetScale = 1.0f;
-    float currentScale = 1.0f;
-    float x = 0, y = 0;
+
+    // Animated properties (tweened)
+    float scale = 1.0f;
+    float jumpOffsetY = 0.0f;
+    float jumpScale = 1.0f;
+    float jumpOpacity = 1.0f;
+    float genieSkew = 0.0f;
+    float genieScaleY = 1.0f;
+    float genieOpacity = 1.0f;
+    float badgeScale = 1.0f;
+    float indicatorOpacity = 1.0f;
+
+    float baseX = 0, baseY = 0;
     float width = 48, height = 48;
+    int tweenIdScale = -1;
+    int tweenIdJump = -1;
+    int tweenIdGenie = -1;
+    int tweenIdBadge = -1;
 };
 
 class DockWindow {
@@ -53,6 +68,12 @@ private:
     void LoadDemoIcons();
     void UpdateAnimations(float deltaTime);
     void UpdateIconPositions();
+    void SetIconHover(int index, bool hovered);
+    void TriggerJump(int index);
+    void TriggerGenie(int index);
+    void TriggerBadgePulse(int index);
+    void StartSlideIn();
+    void StartSlideOut();
 
     HWND m_hwnd = nullptr;
     HINSTANCE m_hInstance = nullptr;
@@ -71,6 +92,11 @@ private:
     float m_animTime = 0.0f;
     int m_currentEffect = 1;
     int m_hoveredIcon = -1;
+
+    // Slide animation
+    float m_slideOffsetY = 100.0f;
+    float m_slideOpacity = 0.0f;
+    bool m_slideInComplete = false;
 
     static constexpr int DOCK_HEIGHT = 64;
     static constexpr int DOCK_MARGIN = 12;

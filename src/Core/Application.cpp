@@ -19,7 +19,7 @@ bool Application::Initialize(HINSTANCE hInstance) {
     }
     LOG_INFO("========================================");
     LOG_INFO("  DockForge v1.0.0-alpha");
-    LOG_INFO("  Chat 03 - Icons & Resources");
+    LOG_INFO("  Chat 04 - Animation Engine");
     LOG_INFO("========================================");
 
     m_taskbarHider = std::make_unique<TaskbarHider>();
@@ -35,7 +35,8 @@ bool Application::Initialize(HINSTANCE hInstance) {
     }
     m_dockWindow->Show();
     m_initialized = true;
-    LOG_INFO("DockForge initialized. F1=cycle effects, Hover=magification, Badges active");
+    LOG_INFO("DockForge initialized. Controls:");
+    LOG_INFO("  F1 = cycle effects | Hover = magnification | LClick = jump | DblClick = genie | RClick = badge pulse");
     return true;
 }
 

@@ -34,6 +34,8 @@ add_executable(DockForge WIN32
     src/Renderer/AnimatedIcon.h
     src/Renderer/BadgeRenderer.cpp
     src/Renderer/BadgeRenderer.h
+    src/Renderer/TweenEngine.cpp
+    src/Renderer/TweenEngine.h
 )
 
 target_compile_definitions(DockForge PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)

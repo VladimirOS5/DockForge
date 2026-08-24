@@ -65,14 +65,13 @@ bool DockWindow::Create(HINSTANCE hInstance) {
 
     LoadDemoIcons();
     UpdateIconPositions();
+    StartSlideIn();
 
-    LOG_INFO("Dock window created with icon support");
+    LOG_INFO("Dock window created with TweenEngine");
     return true;
 }
 
 void DockWindow::LoadDemoIcons() {
-    // Load system icons as demo placeholders
-    // In production, these would come from running apps / pinned apps config
     std::vector<std::pair<std::wstring, int>> demoApps = {
         {L"explorer.exe", 3},
         {L"notepad.exe", 0},
@@ -86,8 +85,16 @@ void DockWindow::LoadDemoIcons() {
         icon.appPath = path;
         icon.isPinned = true;
         icon.badgeCount = badge;
+        icon.scale = 1.0f;
+        icon.jumpOffsetY = 0.0f;
+        icon.jumpScale = 1.0f;
+        icon.jumpOpacity = 1.0f;
+        icon.genieSkew = 0.0f;
+        icon.genieScaleY = 1.0f;
+        icon.genieOpacity = 1.0f;
+        icon.badgeScale = 1.0f;
+        icon.indicatorOpacity = 1.0f;
 
-        // Try to load real icon
         if (path.find(L":") != std::wstring::npos) {
             icon.loadedIcon = m_iconLoader->LoadSystemIcon(path, ICON_SIZE);
         } else {
@@ -99,16 +106,13 @@ void DockWindow::LoadDemoIcons() {
 
         if (!icon.loadedIcon.frames.empty()) {
             icon.animator.SetIcon(icon.loadedIcon);
-            // Add first frame to atlas
             AtlasEntry entry;
             if (m_textureAtlas->AddBitmap(icon.loadedIcon.frames[0].Get(), entry)) {
                 icon.atlasEntry = entry;
             }
         }
-
         m_icons.push_back(std::move(icon));
     }
-
     LOG_INFO("Loaded " + std::to_string(m_icons.size()) + " demo icons");
 }
 
@@ -116,14 +120,13 @@ void DockWindow::UpdateIconPositions() {
     RECT rc; GetClientRect(m_hwnd, &rc);
     float width = static_cast<float>(rc.right - rc.left);
     float height = static_cast<float>(rc.bottom - rc.top);
-
     float totalIconWidth = m_icons.size() * ICON_SIZE + (m_icons.size() - 1) * ICON_PADDING;
     float startX = (width - totalIconWidth) / 2.0f;
     float iconY = (height - ICON_SIZE) / 2.0f;
 
     for (size_t i = 0; i < m_icons.size(); ++i) {
-        m_icons[i].x = startX + i * (ICON_SIZE + ICON_PADDING);
-        m_icons[i].y = iconY;
+        m_icons[i].baseX = startX + i * (ICON_SIZE + ICON_PADDING);
+        m_icons[i].baseY = iconY;
         m_icons[i].width = ICON_SIZE;
         m_icons[i].height = ICON_SIZE;
     }
@@ -131,6 +134,26 @@ void DockWindow::UpdateIconPositions() {
 
 void DockWindow::Show() { if (m_hwnd) { ShowWindow(m_hwnd, SW_SHOW); UpdateWindow(m_hwnd); } }
 void DockWindow::Hide() { if (m_hwnd) ShowWindow(m_hwnd, SW_HIDE); }
+
+void DockWindow::StartSlideIn() {
+    auto& cfg = Config::Instance().Get();
+    m_slideOffsetY = static_cast<float>(DOCK_HEIGHT + DOCK_MARGIN);
+    m_slideOpacity = 0.0f;
+    m_slideInComplete = false;
+
+    float speed = cfg.slideAnimationSpeed * cfg.animationSpeed;
+    TweenEngine::Instance().AddTween(&m_slideOffsetY, m_slideOffsetY, 0.0f, speed, EasingFromString(cfg.defaultEasing));
+    TweenEngine::Instance().AddTween(&m_slideOpacity, 0.0f, 1.0f, speed * 0.8f, EasingType::EaseOut, [this]() {
+        m_slideInComplete = true;
+    });
+}
+
+void DockWindow::StartSlideOut() {
+    auto& cfg = Config::Instance().Get();
+    float speed = cfg.slideAnimationSpeed * cfg.animationSpeed;
+    TweenEngine::Instance().AddTween(&m_slideOffsetY, 0.0f, static_cast<float>(DOCK_HEIGHT + DOCK_MARGIN), speed, EasingFromString(cfg.defaultEasing));
+    TweenEngine::Instance().AddTween(&m_slideOpacity, 1.0f, 0.0f, speed * 0.8f, EasingType::EaseOut);
+}
 
 void DockWindow::RunMessageLoop() {
     MSG msg;
@@ -176,11 +199,64 @@ LRESULT DockWindow::HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_MOUSEMOVE: {
             int mx = GET_X_LPARAM(lParam);
             int my = GET_Y_LPARAM(lParam);
+            int oldHover = m_hoveredIcon;
             m_hoveredIcon = -1;
             for (size_t i = 0; i < m_icons.size(); ++i) {
-                if (mx >= m_icons[i].x && mx < m_icons[i].x + m_icons[i].width &&
-                    my >= m_icons[i].y && my < m_icons[i].y + m_icons[i].height) {
+                float drawX = m_icons[i].baseX + (m_icons[i].width - m_icons[i].width * m_icons[i].scale) / 2.0f;
+                float drawY = m_icons[i].baseY + m_icons[i].jumpOffsetY;
+                float drawW = m_icons[i].width * m_icons[i].scale;
+                float drawH = m_icons[i].height * m_icons[i].scale;
+                if (mx >= drawX && mx < drawX + drawW && my >= drawY && my < drawY + drawH) {
                     m_hoveredIcon = static_cast<int>(i);
+                    break;
+                }
+            }
+            if (oldHover != m_hoveredIcon) {
+                if (oldHover >= 0) SetIconHover(oldHover, false);
+                if (m_hoveredIcon >= 0) SetIconHover(m_hoveredIcon, true);
+            }
+            return 0;
+        }
+        case WM_LBUTTONDOWN: {
+            int mx = GET_X_LPARAM(lParam);
+            int my = GET_Y_LPARAM(lParam);
+            for (size_t i = 0; i < m_icons.size(); ++i) {
+                float drawX = m_icons[i].baseX + (m_icons[i].width - m_icons[i].width * m_icons[i].scale) / 2.0f;
+                float drawY = m_icons[i].baseY + m_icons[i].jumpOffsetY;
+                float drawW = m_icons[i].width * m_icons[i].scale;
+                float drawH = m_icons[i].height * m_icons[i].scale;
+                if (mx >= drawX && mx < drawX + drawW && my >= drawY && my < drawY + drawH) {
+                    TriggerJump(static_cast<int>(i));
+                    break;
+                }
+            }
+            return 0;
+        }
+        case WM_RBUTTONDOWN: {
+            int mx = GET_X_LPARAM(lParam);
+            int my = GET_Y_LPARAM(lParam);
+            for (size_t i = 0; i < m_icons.size(); ++i) {
+                float drawX = m_icons[i].baseX + (m_icons[i].width - m_icons[i].width * m_icons[i].scale) / 2.0f;
+                float drawY = m_icons[i].baseY + m_icons[i].jumpOffsetY;
+                float drawW = m_icons[i].width * m_icons[i].scale;
+                float drawH = m_icons[i].height * m_icons[i].scale;
+                if (mx >= drawX && mx < drawX + drawW && my >= drawY && my < drawY + drawH) {
+                    TriggerBadgePulse(static_cast<int>(i));
+                    break;
+                }
+            }
+            return 0;
+        }
+        case WM_LBUTTONDBLCLK: {
+            int mx = GET_X_LPARAM(lParam);
+            int my = GET_Y_LPARAM(lParam);
+            for (size_t i = 0; i < m_icons.size(); ++i) {
+                float drawX = m_icons[i].baseX + (m_icons[i].width - m_icons[i].width * m_icons[i].scale) / 2.0f;
+                float drawY = m_icons[i].baseY + m_icons[i].jumpOffsetY;
+                float drawW = m_icons[i].width * m_icons[i].scale;
+                float drawH = m_icons[i].height * m_icons[i].scale;
+                if (mx >= drawX && mx < drawX + drawW && my >= drawY && my < drawY + drawH) {
+                    TriggerGenie(static_cast<int>(i));
                     break;
                 }
             }
@@ -197,20 +273,139 @@ void DockWindow::CycleEffect() {
     LOG_INFO(std::string("Switched effect to: ") + names[m_currentEffect]);
 }
 
+void DockWindow::SetIconHover(int index, bool hovered) {
+    if (index < 0 || index >= static_cast<int>(m_icons.size())) return;
+    auto& cfg = Config::Instance().Get();
+    float targetScale = hovered ? cfg.magnificationScale : 1.0f;
+    float speed = 250.0f * cfg.animationSpeed;
+    EasingType easing = EasingFromString(cfg.magnificationEasing);
+
+    // Remove existing scale tween
+    if (m_icons[index].tweenIdScale >= 0) {
+        TweenEngine::Instance().RemoveTween(m_icons[index].tweenIdScale);
+    }
+    m_icons[index].tweenIdScale = TweenEngine::Instance().AddTween(
+        &m_icons[index].scale, m_icons[index].scale, targetScale, speed, easing);
+
+    // Magnification range: affect neighbors
+    int range = static_cast<int>(cfg.magnificationRange);
+    for (int offset = 1; offset <= range; ++offset) {
+        float neighborScale = hovered ? (1.0f + (cfg.magnificationScale - 1.0f) * (1.0f - offset / (range + 1.0f))) : 1.0f;
+
+        int left = index - offset;
+        if (left >= 0) {
+            if (m_icons[left].tweenIdScale >= 0) TweenEngine::Instance().RemoveTween(m_icons[left].tweenIdScale);
+            m_icons[left].tweenIdScale = TweenEngine::Instance().AddTween(
+                &m_icons[left].scale, m_icons[left].scale, neighborScale, speed, easing);
+        }
+        int right = index + offset;
+        if (right < static_cast<int>(m_icons.size())) {
+            if (m_icons[right].tweenIdScale >= 0) TweenEngine::Instance().RemoveTween(m_icons[right].tweenIdScale);
+            m_icons[right].tweenIdScale = TweenEngine::Instance().AddTween(
+                &m_icons[right].scale, m_icons[right].scale, neighborScale, speed, easing);
+        }
+    }
+}
+
+void DockWindow::TriggerJump(int index) {
+    if (index < 0 || index >= static_cast<int>(m_icons.size())) return;
+    auto& cfg = Config::Instance().Get();
+    if (!cfg.jumpAnimation) return;
+
+    auto& icon = m_icons[index];
+    float speed = cfg.jumpAnimationSpeed * cfg.animationSpeed;
+
+    // Remove existing jump tweens
+    if (icon.tweenIdJump >= 0) TweenEngine::Instance().RemoveTween(icon.tweenIdJump);
+
+    // Phase 1: jump up
+    icon.tweenIdJump = TweenEngine::Instance().AddTween(&icon.jumpOffsetY, 0.0f, -20.0f, speed * 0.4f, EasingType::EaseOutBack,
+        [this, index, speed]() {
+            // Phase 2: fall down
+            if (index < static_cast<int>(m_icons.size())) {
+                m_icons[index].tweenIdJump = TweenEngine::Instance().AddTween(
+                    &m_icons[index].jumpOffsetY, -20.0f, 0.0f, speed * 0.6f, EasingType::EaseOutBounce);
+            }
+        });
+
+    // Scale pulse
+    TweenEngine::Instance().AddTween(&icon.jumpScale, 1.0f, 1.15f, speed * 0.3f, EasingType::EaseOutBack,
+        [this, index, speed]() {
+            if (index < static_cast<int>(m_icons.size())) {
+                TweenEngine::Instance().AddTween(&m_icons[index].jumpScale, 1.15f, 1.0f, speed * 0.3f, EasingType::EaseOut);
+            }
+        });
+}
+
+void DockWindow::TriggerGenie(int index) {
+    if (index < 0 || index >= static_cast<int>(m_icons.size())) return;
+    auto& cfg = Config::Instance().Get();
+    if (!cfg.genieEffect) return;
+
+    auto& icon = m_icons[index];
+    float speed = cfg.genieAnimationSpeed * cfg.animationSpeed;
+
+    if (icon.tweenIdGenie >= 0) TweenEngine::Instance().RemoveTween(icon.tweenIdGenie);
+
+    // Pseudo-genie: skew + scaleY + opacity
+    icon.tweenIdGenie = TweenEngine::Instance().AddTween(&icon.genieSkew, 0.0f, -0.3f, speed * 0.5f, EasingType::EaseInOut,
+        [this, index, speed]() {
+            if (index < static_cast<int>(m_icons.size())) {
+                TweenEngine::Instance().AddTween(&m_icons[index].genieSkew, -0.3f, 0.0f, speed * 0.5f, EasingType::EaseOut);
+            }
+        });
+
+    TweenEngine::Instance().AddTween(&icon.genieScaleY, 1.0f, 0.1f, speed, EasingType::EaseInOut,
+        [this, index, speed]() {
+            if (index < static_cast<int>(m_icons.size())) {
+                TweenEngine::Instance().AddTween(&m_icons[index].genieScaleY, 0.1f, 1.0f, speed * 0.8f, EasingType::EaseOutBack);
+            }
+        });
+
+    TweenEngine::Instance().AddTween(&icon.genieOpacity, 1.0f, 0.3f, speed * 0.5f, EasingType::EaseInOut,
+        [this, index, speed]() {
+            if (index < static_cast<int>(m_icons.size())) {
+                TweenEngine::Instance().AddTween(&m_icons[index].genieOpacity, 0.3f, 1.0f, speed * 0.5f, EasingType::EaseOut);
+            }
+        });
+}
+
+void DockWindow::TriggerBadgePulse(int index) {
+    if (index < 0 || index >= static_cast<int>(m_icons.size())) return;
+    auto& cfg = Config::Instance().Get();
+    if (!cfg.badgePulse) return;
+
+    auto& icon = m_icons[index];
+    float speed = cfg.badgePulseSpeed * cfg.animationSpeed;
+
+    if (icon.tweenIdBadge >= 0) TweenEngine::Instance().RemoveTween(icon.tweenIdBadge);
+
+    icon.tweenIdBadge = TweenEngine::Instance().AddTween(&icon.badgeScale, 1.0f, 1.5f, speed * 0.5f, EasingType::EaseOutBack,
+        [this, index, speed]() {
+            if (index < static_cast<int>(m_icons.size())) {
+                m_icons[index].tweenIdBadge = TweenEngine::Instance().AddTween(
+                    &m_icons[index].badgeScale, 1.5f, 1.0f, speed * 0.5f, EasingType::EaseOut);
+            }
+        });
+}
+
 void DockWindow::UpdateAnimations(float deltaTime) {
-    // Magnification effect on hover
-    for (size_t i = 0; i < m_icons.size(); ++i) {
-        float target = (static_cast<int>(i) == m_hoveredIcon) ? 1.3f : 1.0f;
-        float speed = 10.0f;
-        m_icons[i].currentScale += (target - m_icons[i].currentScale) * speed * deltaTime;
-        if (std::abs(m_icons[i].currentScale - target) < 0.01f) m_icons[i].currentScale = target;
+    TweenEngine::Instance().Update(deltaTime);
+
+    // Running indicator pulse
+    auto& cfg = Config::Instance().Get();
+    if (cfg.runningIndicatorPulse) {
+        float pulse = 0.7f + 0.3f * std::sin(m_animTime * 3.0f);
+        for (auto& icon : m_icons) {
+            if (icon.isRunning || icon.isPinned) {
+                icon.indicatorOpacity = pulse;
+            }
+        }
     }
 
     // Update animated icons
     for (auto& icon : m_icons) {
-        if (icon.loadedIcon.isAnimated) {
-            icon.animator.Update();
-        }
+        if (icon.loadedIcon.isAnimated) icon.animator.Update();
     }
 }
 
@@ -229,9 +424,9 @@ void DockWindow::OnPaint() {
 void DockWindow::DrawBackgroundEffect() {
     if (!m_effectRenderer || !m_effectRenderer->IsInitialized()) {
         RECT rc; GetClientRect(m_hwnd, &rc);
-        float width = static_cast<float>(rc.right - rc.left);
-        float height = static_cast<float>(rc.bottom - rc.top);
-        m_renderer->DrawRoundedRect(0, 0, width, height, DOCK_CORNER_RADIUS, 0.12f, 0.12f, 0.14f, 0.88f);
+        float w = static_cast<float>(rc.right - rc.left);
+        float h = static_cast<float>(rc.bottom - rc.top);
+        m_renderer->DrawRoundedRect(0, m_slideOffsetY, w, h, DOCK_CORNER_RADIUS, 0.12f, 0.12f, 0.14f, 0.88f * m_slideOpacity);
         return;
     }
 
@@ -260,52 +455,72 @@ void DockWindow::DrawBackgroundEffect() {
         effectOutput = m_liquidGlass->Apply(m_effectRenderer->GetTargetBitmap());
     }
 
+    float drawY = m_slideOffsetY;
     if (effectOutput) {
-        m_renderer->DrawBitmap(reinterpret_cast<ID2D1Bitmap*>(effectOutput), 0, 0, static_cast<float>(w), static_cast<float>(h), 0.9f);
+        m_renderer->DrawBitmap(reinterpret_cast<ID2D1Bitmap*>(effectOutput), 0, drawY, static_cast<float>(w), static_cast<float>(h), 0.9f * m_slideOpacity);
     } else {
-        m_renderer->DrawBitmap(m_effectRenderer->GetTargetBitmap(), 0, 0, static_cast<float>(w), static_cast<float>(h), 0.9f);
+        m_renderer->DrawBitmap(m_effectRenderer->GetTargetBitmap(), 0, drawY, static_cast<float>(w), static_cast<float>(h), 0.9f * m_slideOpacity);
     }
 
-    m_renderer->FillRect(DOCK_CORNER_RADIUS, 0, w - DOCK_CORNER_RADIUS * 2, 1.0f, 0.5f, 0.5f, 0.55f, 0.4f);
+    m_renderer->FillRect(DOCK_CORNER_RADIUS, drawY, w - DOCK_CORNER_RADIUS * 2, 1.0f, 0.5f, 0.5f, 0.55f, 0.4f * m_slideOpacity);
 }
 
 void DockWindow::DrawIcons() {
     ID2D1Bitmap* atlas = m_textureAtlas->GetAtlasBitmap();
+    float slideY = m_slideOffsetY;
 
     for (size_t i = 0; i < m_icons.size(); ++i) {
         auto& icon = m_icons[i];
-        float scale = icon.currentScale;
-        float scaledW = icon.width * scale;
-        float scaledH = icon.height * scale;
-        float drawX = icon.x + (icon.width - scaledW) / 2.0f;
-        float drawY = icon.y + (icon.height - scaledH) / 2.0f;
+        float combinedScale = icon.scale * icon.jumpScale * icon.genieScaleY;
+        float scaledW = icon.width * combinedScale;
+        float scaledH = icon.height * combinedScale;
+        float drawX = icon.baseX + (icon.width - scaledW) / 2.0f;
+        float drawY = icon.baseY + icon.jumpOffsetY + slideY + (icon.height - scaledH) / 2.0f;
+        float opacity = icon.jumpOpacity * icon.genieOpacity * m_slideOpacity;
 
-        // Draw icon shadow/glow
-        m_renderer->DrawRoundedRect(drawX + 2, drawY + 2, scaledW, scaledH, 10.0f, 0.0f, 0.0f, 0.0f, 0.3f);
+        if (opacity <= 0.01f) continue;
 
-        // Draw icon from atlas or direct bitmap
+        // Apply genie skew via transform (simplified: offset based on Y)
+        float skewOffset = icon.genieSkew * (drawY - icon.baseY - slideY);
+
+        // Shadow
+        m_renderer->DrawRoundedRect(drawX + 2 + skewOffset, drawY + 2, scaledW, scaledH, 10.0f, 0.0f, 0.0f, 0.0f, 0.2f * opacity);
+
+        // Icon
         if (atlas && icon.atlasEntry.width > 0) {
-            m_renderer->DrawBitmapFromAtlas(atlas, drawX, drawY, scaledW, scaledH,
-                icon.atlasEntry.u0, icon.atlasEntry.v0, icon.atlasEntry.u1, icon.atlasEntry.v1, 1.0f);
+            m_renderer->DrawBitmapFromAtlas(atlas, drawX + skewOffset, drawY, scaledW, scaledH,
+                icon.atlasEntry.u0, icon.atlasEntry.v0, icon.atlasEntry.u1, icon.atlasEntry.v1, opacity);
         } else if (!icon.loadedIcon.frames.empty()) {
             ID2D1Bitmap* frame = icon.animator.GetCurrentFrame();
-            if (frame) m_renderer->DrawBitmap(frame, drawX, drawY, scaledW, scaledH, 1.0f);
+            if (frame) m_renderer->DrawBitmap(frame, drawX + skewOffset, drawY, scaledW, scaledH, opacity);
         } else {
-            // Fallback placeholder
-            m_renderer->DrawRoundedRect(drawX, drawY, scaledW, scaledH, 10.0f, 0.3f, 0.3f, 0.35f, 0.5f);
+            m_renderer->DrawRoundedRect(drawX + skewOffset, drawY, scaledW, scaledH, 10.0f, 0.3f, 0.3f, 0.35f, 0.5f * opacity);
         }
 
-        // Running indicator (dot)
+        // Running indicator
         if (icon.isRunning || icon.isPinned) {
-            float dotSize = 4.0f;
+            float dotSize = 4.0f * icon.scale;
             float dotX = drawX + scaledW / 2.0f - dotSize / 2.0f;
             float dotY = drawY + scaledH + 3.0f;
-            float alpha = icon.isRunning ? 1.0f : 0.3f;
+            float alpha = (icon.isRunning ? 1.0f : 0.3f) * icon.indicatorOpacity * m_slideOpacity;
             m_renderer->FillRect(dotX, dotY, dotSize, dotSize, 1.0f, 1.0f, 1.0f, alpha);
         }
 
         // Badge
         if (icon.badgeCount > 0) {
+            float badgeBaseX = drawX + scaledW - 8.0f;
+            float badgeBaseY = drawY - 2.0f;
+            float badgeSize = 16.0f * icon.badgeScale;
+            float badgeX = badgeBaseX - badgeSize / 2.0f;
+            float badgeY = badgeBaseY - badgeSize / 2.0f;
+
+            // Draw badge background manually (simplified without text for now)
+            m_renderer->DrawRoundedRect(badgeX, badgeY, badgeSize, badgeSize, badgeSize / 2.0f,
+                0.95f, 0.2f, 0.2f, 1.0f * opacity);
+            m_renderer->DrawRoundedRect(badgeX, badgeY, badgeSize, badgeSize, badgeSize / 2.0f,
+                1.0f, 1.0f, 1.0f, 0.8f * opacity); // border
+
+            // Use BadgeRenderer for text
             m_badgeRenderer->DrawBadge(m_renderer->GetRenderTarget(), drawX, drawY, icon.badgeCount, scaledW);
         }
     }
@@ -315,7 +530,7 @@ void DockWindow::DrawFPS() {
     if (!m_frameLimiter) return;
     float fps = m_frameLimiter->GetCurrentFPS();
     std::wstring text = L"FPS: " + std::to_wstring(static_cast<int>(fps));
-    m_renderer->DrawTextLayout(text, 10, 5, 0.0f, 1.0f, 0.0f, 10.0f);
+    m_renderer->DrawTextLayout(text, 10, 5 + m_slideOffsetY, 0.0f, 1.0f, 0.0f, 10.0f);
 }
 
 void DockWindow::OnSize(UINT width, UINT height) {
