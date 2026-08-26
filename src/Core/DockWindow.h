@@ -10,21 +10,36 @@
 #include "../Renderer/BadgeRenderer.h"
 #include "../Renderer/TweenEngine.h"
 #include "../Utils/Config.h"
+#include "../Shell/ShellHookManager.h"
+#include "../Shell/WindowManager.h"
+#include "../Shell/ThumbnailPreview.h"
+#include "../Shell/JumpListManager.h"
+#include "../Shell/TrayIconManager.h"
+#include "../Shell/StartButton.h"
+#include "../Shell/DockContextMenu.h"
 #include <memory>
 #include <vector>
 #include <string>
 
+struct MonitorInfo;
+
+enum class IconType { App, Tray, StartButton };
+
 struct DockIcon {
+    IconType type = IconType::App;
     std::wstring appPath;
     std::wstring displayName;
+    std::wstring exePath;
+    std::wstring processName;
     LoadedIcon loadedIcon;
     AnimatedIcon animator;
     AtlasEntry atlasEntry;
+    TrayIconInfo trayInfo;
     int badgeCount = 0;
     bool isPinned = true;
     bool isRunning = false;
+    int windowCount = 0;
 
-    // Animated properties (tweened)
     float scale = 1.0f;
     float jumpOffsetY = 0.0f;
     float jumpScale = 1.0f;
@@ -47,11 +62,13 @@ class DockWindow {
 public:
     DockWindow();
     ~DockWindow();
-    bool Create(HINSTANCE hInstance);
+    bool Create(HINSTANCE hInstance, const MonitorInfo* monitor = nullptr);
     void Show();
     void Hide();
     void Destroy();
     void RunMessageLoop();
+    void Update(float deltaTime);
+    void Render();
     HWND GetHwnd() const { return m_hwnd; }
     bool IsRunning() const { return m_running; }
     void RequestQuit() { m_running = false; }
@@ -66,17 +83,28 @@ private:
     void DrawIcons();
     void DrawFPS();
     void LoadDemoIcons();
+    void LoadStartButton();
+    void UpdateTrayIcons();
     void UpdateAnimations(float deltaTime);
     void UpdateIconPositions();
+    void UpdateRunningStates();
     void SetIconHover(int index, bool hovered);
     void TriggerJump(int index);
     void TriggerGenie(int index);
     void TriggerBadgePulse(int index);
     void StartSlideIn();
     void StartSlideOut();
+    
+    void ShowThumbnailPreview(int iconIndex);
+    void HideThumbnailPreview();
+    void ShowContextMenu(int iconIndex, int x, int y);
+    void ShowDockContextMenu(int x, int y);
+    void LaunchOrActivate(int iconIndex);
+    void LaunchApp(const DockIcon& icon);
 
     HWND m_hwnd = nullptr;
     HINSTANCE m_hInstance = nullptr;
+    const MonitorInfo* m_monitor = nullptr;
     std::unique_ptr<D2DRenderer> m_renderer;
     std::unique_ptr<EffectRenderer> m_effectRenderer;
     std::unique_ptr<BlurEffect> m_blur;
@@ -86,14 +114,15 @@ private:
     std::unique_ptr<IconLoader> m_iconLoader;
     std::unique_ptr<TextureAtlas> m_textureAtlas;
     std::unique_ptr<BadgeRenderer> m_badgeRenderer;
+    std::unique_ptr<ThumbnailPreview> m_thumbnailPreview;
     std::vector<DockIcon> m_icons;
 
     bool m_running = true;
     float m_animTime = 0.0f;
     int m_currentEffect = 1;
     int m_hoveredIcon = -1;
+    int m_previewIcon = -1;
 
-    // Slide animation
     float m_slideOffsetY = 100.0f;
     float m_slideOpacity = 0.0f;
     bool m_slideInComplete = false;

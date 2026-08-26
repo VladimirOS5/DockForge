@@ -22,6 +22,7 @@ class IconLoader {
 public:
     bool Initialize(ID2D1RenderTarget* rt);
     LoadedIcon LoadFromExe(const std::wstring& exePath, int size = 48);
+    LoadedIcon LoadFromHICON(HICON hIcon, int size);
     LoadedIcon LoadFromFile(const std::wstring& filePath, int size = 48);
     LoadedIcon LoadAnimated(const std::wstring& filePath, int size = 48);
     LoadedIcon LoadSystemIcon(const std::wstring& shellPath, int size = 48);

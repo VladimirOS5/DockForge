@@ -326,3 +326,25 @@ void IconLoader::ReleaseIcon(LoadedIcon& icon) {
     icon.frameCount = 0;
     icon.isAnimated = false;
 }
+
+LoadedIcon IconLoader::LoadFromHICON(HICON hIcon, int size) {
+    LoadedIcon result;
+    if (!m_renderTarget || !hIcon) return result;
+
+    Microsoft::WRL::ComPtr<IWICImagingFactory> wicFactory;
+    HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wicFactory));
+    if (FAILED(hr)) return result;
+
+    Microsoft::WRL::ComPtr<IWICBitmap> wicBitmap;
+    hr = wicFactory->CreateBitmapFromHICON(hIcon, &wicBitmap);
+    if (FAILED(hr)) return result;
+
+    Microsoft::WRL::ComPtr<ID2D1Bitmap> d2dBitmap;
+    hr = m_renderTarget->CreateBitmapFromWicBitmap(wicBitmap.Get(), &d2dBitmap);
+    if (SUCCEEDED(hr) && d2dBitmap) {
+        result.frames.push_back(d2dBitmap);
+        result.width = size;
+        result.height = size;
+    }
+    return result;
+}
