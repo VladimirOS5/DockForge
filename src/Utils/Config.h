@@ -53,13 +53,24 @@ struct DockConfig {
 
     // Chat 11 — OTA & Fallback
     bool autoCheckUpdates = true;
-    int updateCheckInterval = 60; // minutes
-    std::string updateChannel = "stable"; // "stable", "beta", "alpha"
+    int updateCheckInterval = 60;
+    std::string updateChannel = "stable";
     bool autoDownloadUpdates = true;
     bool autoInstallUpdates = false;
     std::string updateServerUrl = "https://api.dockforge.app/v1/releases";
     bool safeMode = false;
     bool runSelfTestsOnStart = true;
+
+    // Chat 12 — Polish & Testing
+    bool enableMemoryTracking = true;
+    bool runStabilityTestsOnStart = false;
+    bool logDPIInfo = true;
+    bool logHDRInfo = true;
+    bool detectUWPApps = true;
+    bool handleDPIScale = true;
+    bool useHDRAwareColors = false;
+    int stabilityTestDurationHours = 72;
+    float stabilityTimeScale = 60.0f;
 };
 
 class Config {

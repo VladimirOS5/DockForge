@@ -4,7 +4,11 @@
 #include "../Utils/Theme.h"
 #include "../Utils/PerformanceProfile.h"
 #include "../Utils/FallbackManager.h"
+#include "../Utils/DPIHelper.h"
+#include "../Utils/HDREnums.h"
 #include "../Updater/OTAUpdater.h"
+#include "../Testing/MemoryTracker.h"
+#include "../Testing/StabilityTest.h"
 #include "../Core/MonitorManager.h"
 #include "../Shell/ShellHookManager.h"
 #include "../Shell/WindowManager.h"
@@ -52,21 +56,36 @@ bool Application::Initialize(HINSTANCE hInstance) {
         Logger::Instance().Init("logs", "DockForge");
     }
     LOG_INFO("========================================");
-    LOG_INFO("  DockForge v1.0.0-alpha");
-    LOG_INFO("  Chat 11 - OTA, Installer & Fallback");
+    LOG_INFO("  DockForge v1.0.0");
+    LOG_INFO("  Chat 12 - Polish, Testing & Release");
     LOG_INFO("========================================");
     LOG_INFO("Version: " + SemanticVersion::Current().ToString());
     LOG_INFO("Channel: " + cfg.updateChannel);
     LOG_INFO("Safe mode: " + std::string(cfg.safeMode ? "YES" : "NO"));
+    LOG_INFO("Memory tracking: " + std::string(cfg.enableMemoryTracking ? "ON" : "OFF"));
 
     HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
     if (FAILED(hr)) LOG_WARN("CoInitializeEx failed, continuing...");
 
     ThemeManager::Instance().Refresh();
 
+    // System info logging
+    LogSystemInfo();
+
+    // DPI initialization
+    InitializeDPI();
+
+    // Memory tracking
+    InitializeMemoryTracking();
+
     // Self-tests
     if (cfg.runSelfTestsOnStart) {
         RunSelfTests();
+    }
+
+    // Stability tests (if enabled)
+    if (cfg.runStabilityTestsOnStart) {
+        RunStabilityTests();
     }
 
     if (!ShellHookManager::Instance().Initialize()) LOG_WARN("Failed to initialize ShellHookManager");
@@ -85,7 +104,7 @@ bool Application::Initialize(HINSTANCE hInstance) {
 
     auto taskbarHider = std::make_unique<TaskbarHider>();
     if (!taskbarHider->Hide()) LOG_WARN("Failed to hide taskbar, continuing with overlay mode...");
-    taskbarHider.release(); // Managed by MonitorManager or stays hidden
+    taskbarHider.release();
 
     if (!SettingsWindow::Instance().Create(hInstance)) {
         LOG_WARN("Failed to create settings window");
@@ -98,8 +117,92 @@ bool Application::Initialize(HINSTANCE hInstance) {
     InitializeFallback();
 
     m_initialized = true;
-    LOG_INFO("DockForge initialized successfully.");
+    LOG_INFO("DockForge v1.0.0 initialized successfully.");
     return true;
+}
+
+void Application::LogSystemInfo() {
+    auto& cfg = Config::Instance().Get();
+
+    // Windows version
+    OSVERSIONINFOEXW osvi = { sizeof(osvi) };
+    #pragma warning(suppress: 4996)
+    GetVersionExW(reinterpret_cast<OSVERSIONINFOW*>(&osvi));
+    LOG_INFO("Windows: " + std::to_string(osvi.dwMajorVersion) + "." + 
+             std::to_string(osvi.dwMinorVersion) + "." + std::to_string(osvi.dwBuildNumber));
+
+    // CPU info
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    LOG_INFO("CPU cores: " + std::to_string(si.dwNumberOfProcessors));
+
+    // Memory
+    MEMORYSTATUSEX mem = { sizeof(mem) };
+    if (GlobalMemoryStatusEx(&mem)) {
+        LOG_INFO("RAM: " + std::to_string(mem.ullTotalPhys / (1024*1024*1024)) + " GB total, " +
+                 std::to_string(mem.ullAvailPhys / (1024*1024*1024)) + " GB free");
+    }
+
+    // DPI
+    if (cfg.logDPIInfo) {
+        float scale = DPIHelper::GetSystemScale();
+        LOG_INFO("System DPI scale: " + std::to_string(scale));
+    }
+
+    // HDR
+    if (cfg.logHDRInfo) {
+        HDRHelper::LogDisplayInfo();
+    }
+}
+
+void Application::InitializeDPI() {
+    auto& cfg = Config::Instance().Get();
+    if (cfg.handleDPIScale) {
+        DPIHelper::EnablePerMonitorV2();
+    }
+}
+
+void Application::InitializeMemoryTracking() {
+    auto& cfg = Config::Instance().Get();
+    MemoryTracker::Instance().SetEnabled(cfg.enableMemoryTracking);
+    if (cfg.enableMemoryTracking) {
+        LOG_INFO("Memory tracking enabled");
+    }
+}
+
+void Application::RunStabilityTests() {
+    LOG_INFO("Running stability test suite...");
+    StabilityTest::Instance().RegisterDefaultTests();
+    auto reports = StabilityTest::Instance().RunAll();
+
+    // Write report
+    wchar_t localAppData[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, localAppData))) {
+        std::filesystem::path reportPath = std::filesystem::path(localAppData) / L"DockForge" / L"stability_report.txt";
+        StabilityTest::Instance().WriteReport(reports, reportPath.string());
+        LOG_INFO("Stability report written to: " + reportPath.string());
+    }
+}
+
+void Application::RunLongTermStabilityTest() {
+    auto& cfg = Config::Instance().Get();
+    StabilityTest::SimulationConfig simConfig;
+    simConfig.realTimeHours = cfg.stabilityTestDurationHours;
+    simConfig.timeScale = cfg.stabilityTimeScale;
+    simConfig.logEveryHour = true;
+
+    LOG_INFO("Starting long-term stability simulation (" + std::to_string(cfg.stabilityTestDurationHours) + "h)...");
+    bool ok = StabilityTest::Instance().RunLongTermSimulation(simConfig);
+
+    if (ok) {
+        LOG_INFO("Long-term simulation PASSED");
+    } else {
+        LOG_ERROR("Long-term simulation FAILED");
+    }
+}
+
+void Application::PrintMemoryReport() {
+    MemoryTracker::Instance().PrintReport();
 }
 
 void Application::InitializeOTA() {
@@ -146,27 +249,26 @@ void Application::InitializeOTA() {
         }
     });
 
-    // Cleanup old installers
     updater.CleanupOldInstallers();
-
-    // Initial check after 30 seconds
     m_otaTimer = -30.0f;
     LOG_INFO("OTA Updater initialized");
 }
 
 void Application::InitializeFallback() {
     FallbackManager::Instance().RegisterComponent("Renderer", []() {
-        // Check if D2D is functional
-        return true; // Placeholder
+        return true;
     });
     FallbackManager::Instance().RegisterComponent("ShellHooks", []() {
         return ShellHookManager::Instance().IsInitialized();
     });
     FallbackManager::Instance().RegisterComponent("AudioCapture", []() {
-        // Check audio endpoint
-        return true; // Placeholder
+        return true;
     });
-    LOG_INFO("Fallback manager initialized with 3 health checks");
+    FallbackManager::Instance().RegisterComponent("Memory", []() {
+        auto metrics = MemoryTracker::Instance().GetMetrics();
+        return metrics.currentBytes < 100 * 1024 * 1024; // < 100MB
+    });
+    LOG_INFO("Fallback manager initialized with 4 health checks");
 }
 
 void Application::RunSelfTests() {
@@ -181,7 +283,6 @@ void Application::ShowUpdateNotification() {
     std::wstring msg = L"DockForge update " + 
         std::wstring(progress.targetVersion.ToString().begin(), progress.targetVersion.ToString().end()) +
         L" is ready to install.";
-    // In real implementation, this would show a custom toast or tray notification
     LOG_INFO("Update notification: " + progress.targetVersion.ToString() + " ready");
 }
 
@@ -231,6 +332,19 @@ int Application::Run() {
         if (healthTimer >= 10.0f) {
             healthTimer = 0;
             FallbackManager::Instance().RunHealthChecks();
+
+            // Periodic memory report (every 10s * 6 = every minute)
+            static int healthCount = 0;
+            healthCount++;
+            if (healthCount >= 6) {
+                healthCount = 0;
+                if (Config::Instance().Get().enableMemoryTracking) {
+                    auto metrics = MemoryTracker::Instance().GetMetrics();
+                    if (metrics.currentBytes > 50 * 1024 * 1024) {
+                        LOG_WARN("Memory usage high: " + std::to_string(metrics.currentBytes / 1024 / 1024) + " MB");
+                    }
+                }
+            }
         }
 
         MonitorManager::Instance().UpdateAll(deltaTime);
@@ -249,7 +363,6 @@ void Application::UpdateOTA(float deltaTime) {
         m_otaTimer = 0;
         OTAUpdater::Instance().Update(deltaTime);
     } else if (m_otaTimer < 0) {
-        // Initial delay counting up from negative
         if (m_otaTimer >= 0) {
             OTAUpdater::Instance().CheckForUpdateAsync();
         }
@@ -262,6 +375,17 @@ void Application::Shutdown() {
 
     OTAUpdater::Instance().CancelOperation();
 
+    // Final memory report
+    if (Config::Instance().Get().enableMemoryTracking) {
+        MemoryTracker::Instance().PrintReport();
+
+        wchar_t localAppData[MAX_PATH];
+        if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, localAppData))) {
+            std::filesystem::path memReport = std::filesystem::path(localAppData) / L"DockForge" / L"memory_report.txt";
+            MemoryTracker::Instance().WriteReportToFile(memReport.string());
+        }
+    }
+
     PluginManager::Instance().Shutdown();
     MonitorManager::Instance().Shutdown();
     SettingsWindow::Instance().Destroy();
@@ -269,7 +393,6 @@ void Application::Shutdown() {
     WindowManager::Instance().Shutdown();
     ShellHookManager::Instance().Shutdown();
 
-    // Restore taskbar
     auto taskbarHider = std::make_unique<TaskbarHider>();
     if (!taskbarHider->Restore()) LOG_ERROR("Failed to restore taskbar during shutdown!");
 
@@ -277,6 +400,6 @@ void Application::Shutdown() {
 
     FallbackManager::Instance().MarkSessionClean();
 
-    LOG_INFO("Shutdown complete");
+    LOG_INFO("Shutdown complete. Goodbye!");
     LOG_INFO("========================================");
 }

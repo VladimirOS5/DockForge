@@ -1,70 +1,127 @@
-# DockForge
+# DockForge 🚀
 
-Панель задач для Windows 11, вдохновлённая macOS Dock, но лучше и функциональнее.
+> **The ultimate Windows 11 taskbar replacement** — inspired by macOS Dock, built for power users.
 
-## Статус
-🚧 Альфа-разработка — Чат 04 завершён (анимационный движок)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/VladimirOS5/DockForge/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows%2011%20%7C%20Windows%2010%2020H1+-blue)](https://www.microsoft.com/windows)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE.txt)
 
-## Требования
-- Windows 11
-- Visual Studio 2022 (или MSVC build tools)
+![DockForge Preview](docs/preview.png)
+
+## Features
+
+- 🎨 **Stunning Visual Effects** — Acrylic, Liquid Glass, and Audio-Reactive backgrounds
+- 🎵 **Audio-Reactive Dock** — Particles and gradients that dance to your music
+- 🖥️ **Multi-Monitor Support** — Independent docks on every display
+- ⚡ **Performance Profiles** — Eco, Balanced, Performance, and Custom modes
+- 🔄 **Auto-Updates** — Silent OTA updates with rollback protection
+- 🧩 **Plugin System** — Widgets, custom extensions, hot-reload
+- 🎯 **Per-Monitor DPI** — Crisp rendering on any display scale
+- 🌈 **HDR Aware** — Respects HDR display settings
+- 🔒 **Crash Recovery** — Safe mode, self-tests, automatic fallback
+
+## System Requirements
+
+| Requirement | Minimum | Recommended |
+|-------------|---------|-------------|
+| OS | Windows 10 20H1 (19041) | Windows 11 23H2+ |
+| RAM | 4 GB | 8 GB |
+| GPU | Direct2D compatible | DirectX 11 capable |
+| Display | 96 DPI | 144 DPI+ |
+
+## Installation
+
+### Installer (Recommended)
+Download `DockForge_1.0.0_Setup.exe` from [Releases](https://github.com/VladimirOS5/DockForge/releases) and run it.
+
+### Portable
+1. Download `DockForge_1.0.0_Portable.zip`
+2. Extract to any folder
+3. Run `DockForge.exe`
+
+## Building from Source
+
+### Prerequisites
+- Visual Studio 2022 (C++20 workload)
 - CMake 3.20+
-- Windows SDK 10.0.22000.0+
+- Inno Setup 6.2+ (for installer)
 
-## Сборка
-
-```bash
-git clone <repo>
+### Build
+```batch
+# Clone repository
+git clone https://github.com/VladimirOS5/DockForge.git
 cd DockForge
-mkdir build && cd build
-cmake .. -A x64
-cmake --build . --config Release
+
+# Build
+scripts\build_release.bat
 ```
 
-## Запуск
-```bash
-# Опционально: watchdog
-.\watchdog\Release\DockForge.Watchdog.exe
+Output: `dist\DockForge_1.0.0_Setup.exe`
 
-# Основное приложение
-.\src\Release\DockForge.exe
+## Configuration
+
+Config is stored in `%LOCALAPPDATA%\DockForge\config.json`.
+
+### Key Settings
+
+```json
+{
+    "backgroundEffect": "acrylic",
+    "audioReactiveBackground": false,
+    "autoCheckUpdates": true,
+    "updateChannel": "stable",
+    "performanceProfile": "balanced",
+    "multiMonitorMode": "primary",
+    "enableMemoryTracking": true
+}
 ```
 
-**Управление:**
-- **F1** — переключить эффект фона (Acrylic / Liquid Glass / Solid)
-- **Наведение** — magnification иконок с easing (как на macOS)
-- **ЛКМ** — прыжок иконки (jump + bounce)
-- **Двойной ЛКМ** — genie effect
-- **ПКМ** — badge pulse
+### Command-Line Arguments
 
-## Архитектура
+| Argument | Description |
+|----------|-------------|
+| `/safemode` | Start with all effects disabled |
+| `/selftest` | Run diagnostics and exit |
+| `/rollback` | Restore previous version |
+| `/uninstall` | Clean up all data and exit |
+
+## Architecture
+
 ```
-src/
-  Core/       — Application, DockWindow, Main
-  Shell/      — TaskbarHider
-  Renderer/   — D2DRenderer, EffectRenderer, Effects, FrameLimiter,
-                IconLoader, TextureAtlas, AnimatedIcon, BadgeRenderer,
-                TweenEngine
-  Utils/      — Logger, Config, ScreenCapture
-docs/chats/   — Логи разработки
-PLAN.md       — План по чатам
+DockForge/
+├── Core/           # DockWindow, Application, MonitorManager
+├── Renderer/       # D2D, Effects, Animations, Audio-Reactive
+├── Shell/          # Taskbar, ShellHooks, Tray, Thumbnails
+├── Updater/        # OTA, VersionInfo
+├── Testing/        # MemoryTracker, StabilityTest
+├── Utils/          # Config, Logger, Theme, DPI, HDR
+├── Plugin/         # PluginManager, Built-in widgets
+└── Settings/       # Settings window
 ```
 
-## План разработки
-| Чат | Тема | Статус |
-|-----|------|--------|
-| 01 | Скелет проекта | ✅ |
-| 02 | Рендер-движок и эффекты | ✅ |
-| 03 | Иконки и ресурсы | ✅ |
-| 04 | Анимационный движок | ✅ |
-| 05 | Shell интеграция | ⏳ |
-| 06 | Трей и меню Пуск | ⏳ |
-| 07 | Настройки и темы | ⏳ |
-| 08 | Плагины и виджеты | ⏳ |
-| 09 | Мульти-мониторы | ⏳ |
-| 10 | Анимированные обои | ⏳ |
-| 11 | OTA и инсталлятор | ⏳ |
-| 12 | Релиз | ⏳ |
+## Development Chats
 
-## Лицензия
-MIT
+| Chat | Topic | Status |
+|------|-------|--------|
+| 01 | Architecture & Skeleton | ✅ |
+| 02 | Render Engine & Effects | ✅ |
+| 03 | Icons & Resources | ✅ |
+| 04 | Animation Engine | ✅ |
+| 05 | Shell Integration | ⏳ |
+| 06 | System Tray & Start Menu | ⏳ |
+| 07 | Settings & Theming | ⏳ |
+| 08 | Plugin System | ⏳ |
+| 09 | Multi-Monitor & Performance | ⏳ |
+| 10 | Audio-Reactive Background | ✅ |
+| 11 | OTA Updates & Installer | ✅ |
+| 12 | Polish, Testing & Release | ✅ |
+
+## License
+
+MIT License — see [LICENSE.txt](LICENSE.txt)
+
+## Credits
+
+- Built with ❤️ by the DockForge Team
+- Icons powered by Windows Shell APIs
+- Audio capture via WASAPI Loopback

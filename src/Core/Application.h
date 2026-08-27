@@ -13,12 +13,18 @@ public:
     void RequestRestart() { m_restartRequested = true; m_running = false; }
     bool IsRestartRequested() const { return m_restartRequested; }
     void InstallPendingUpdate();
+    void RunStabilityTests();
+    void PrintMemoryReport();
 private:
     void InitializeOTA();
     void InitializeFallback();
     void RunSelfTests();
     void UpdateOTA(float deltaTime);
     void ShowUpdateNotification();
+    void InitializeMemoryTracking();
+    void InitializeDPI();
+    void LogSystemInfo();
+    void RunLongTermStabilityTest();
 
     HINSTANCE m_hInstance = nullptr;
     bool m_initialized = false;

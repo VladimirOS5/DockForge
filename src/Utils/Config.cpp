@@ -64,11 +64,9 @@ bool Config::LoadFromFile() {
         c.showStartButton = j.value("showStartButton", true);
         c.startButtonSkin = j.value("startButtonSkin", std::string("default"));
 
-        // Chat 09
         c.multiMonitorMode = j.value("multiMonitorMode", std::string("primary"));
         c.performanceProfile = j.value("performanceProfile", std::string("balanced"));
 
-        // Chat 10
         c.audioReactiveBackground = j.value("audioReactiveBackground", false);
         c.audioReactiveMode = j.value("audioReactiveMode", std::string("both"));
         c.particleCount = j.value("particleCount", 300);
@@ -79,7 +77,6 @@ bool Config::LoadFromFile() {
         c.particleTrails = j.value("particleTrails", false);
         c.gradientDirection = j.value("gradientDirection", std::string("horizontal"));
 
-        // Chat 11
         c.autoCheckUpdates = j.value("autoCheckUpdates", true);
         c.updateCheckInterval = j.value("updateCheckInterval", 60);
         c.updateChannel = j.value("updateChannel", std::string("stable"));
@@ -88,6 +85,17 @@ bool Config::LoadFromFile() {
         c.updateServerUrl = j.value("updateServerUrl", std::string("https://api.dockforge.app/v1/releases"));
         c.safeMode = j.value("safeMode", false);
         c.runSelfTestsOnStart = j.value("runSelfTestsOnStart", true);
+
+        // Chat 12
+        c.enableMemoryTracking = j.value("enableMemoryTracking", true);
+        c.runStabilityTestsOnStart = j.value("runStabilityTestsOnStart", false);
+        c.logDPIInfo = j.value("logDPIInfo", true);
+        c.logHDRInfo = j.value("logHDRInfo", true);
+        c.detectUWPApps = j.value("detectUWPApps", true);
+        c.handleDPIScale = j.value("handleDPIScale", true);
+        c.useHDRAwareColors = j.value("useHDRAwareColors", false);
+        c.stabilityTestDurationHours = j.value("stabilityTestDurationHours", 72);
+        c.stabilityTimeScale = j.value("stabilityTimeScale", 60.0f);
 
         std::string theme = j.value("theme", std::string("auto"));
         if (theme == "light") ThemeManager::Instance().SetMode(ThemeMode::Light);
@@ -137,6 +145,16 @@ bool Config::SaveToFile() {
         j["updateServerUrl"] = c.updateServerUrl;
         j["safeMode"] = c.safeMode;
         j["runSelfTestsOnStart"] = c.runSelfTestsOnStart;
+
+        j["enableMemoryTracking"] = c.enableMemoryTracking;
+        j["runStabilityTestsOnStart"] = c.runStabilityTestsOnStart;
+        j["logDPIInfo"] = c.logDPIInfo;
+        j["logHDRInfo"] = c.logHDRInfo;
+        j["detectUWPApps"] = c.detectUWPApps;
+        j["handleDPIScale"] = c.handleDPIScale;
+        j["useHDRAwareColors"] = c.useHDRAwareColors;
+        j["stabilityTestDurationHours"] = c.stabilityTestDurationHours;
+        j["stabilityTimeScale"] = c.stabilityTimeScale;
 
         auto mode = ThemeManager::Instance().GetMode();
         j["theme"] = (mode == ThemeMode::Light) ? "light" : (mode == ThemeMode::Dark) ? "dark" : "auto";

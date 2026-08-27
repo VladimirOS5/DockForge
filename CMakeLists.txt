@@ -4,6 +4,11 @@ project(DockForge VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Enable memory tracking in Debug builds
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_definitions(DOCKFORGE_MEMORY_TRACKING=1)
+endif()
+
 include_directories(${CMAKE_SOURCE_DIR}/third_party)
 
 add_executable(DockForge WIN32
@@ -32,6 +37,8 @@ add_executable(DockForge WIN32
     src/Shell/DockContextMenu.h
     src/Shell/WallpaperEngineIntegration.cpp
     src/Shell/WallpaperEngineIntegration.h
+    src/Shell/UWPHelper.cpp
+    src/Shell/UWPHelper.h
     src/Settings/SettingsWindow.cpp
     src/Settings/SettingsWindow.h
     src/Plugin/PluginManager.cpp
@@ -72,6 +79,10 @@ add_executable(DockForge WIN32
     src/Updater/OTAUpdater.h
     src/Updater/VersionInfo.cpp
     src/Updater/VersionInfo.h
+    src/Testing/MemoryTracker.cpp
+    src/Testing/MemoryTracker.h
+    src/Testing/StabilityTest.cpp
+    src/Testing/StabilityTest.h
     src/Utils/Logger.cpp
     src/Utils/Logger.h
     src/Utils/Config.cpp
@@ -84,12 +95,16 @@ add_executable(DockForge WIN32
     src/Utils/ScreenCapture.h
     src/Utils/FallbackManager.cpp
     src/Utils/FallbackManager.h
+    src/Utils/DPIHelper.cpp
+    src/Utils/DPIHelper.h
+    src/Utils/HDREnums.h
+    src/Utils/HDRHelper.cpp
 )
 
 target_compile_definitions(DockForge PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
 
 target_link_libraries(DockForge PRIVATE
-    d2d1 dwrite windowscodecs shlwapi user32 shell32 gdi32 ole32 oleaut32 d3d11 dxgi comctl32 dwmapi psapi mmdevapi wininet crypt32
+    d2d1 dwrite windowscodecs shlwapi user32 shell32 gdi32 ole32 oleaut32 d3d11 dxgi comctl32 dwmapi psapi mmdevapi wininet crypt32 propsys
 )
 
 # Version info resource
