@@ -37,6 +37,35 @@ void Logger::Log(LogLevel level, const std::string& message, const char* file, i
     m_file.flush();
 }
 
+void Logger::WriteCrashDump(const std::string& context) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (!m_initialized) return;
+
+    auto dumpPath = m_logPath;
+    dumpPath += ".crash";
+    std::ofstream dump(dumpPath, std::ios::app);
+    if (!dump) return;
+
+    dump << "\n=== CRASH DUMP ===\n";
+    dump << "Time: " << CurrentTimestamp() << "\n";
+    dump << "Context: " << context << "\n";
+    dump << "Version: " << "1.0.0-alpha" << "\n";
+
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    dump << "CPU Cores: " << si.dwNumberOfProcessors << "\n";
+    dump << "Page Size: " << si.dwPageSize << "\n";
+
+    MEMORYSTATUSEX mem = { sizeof(mem) };
+    if (GlobalMemoryStatusEx(&mem)) {
+        dump << "Memory: " << (mem.ullTotalPhys / (1024*1024)) << " MB total, "
+             << (mem.ullAvailPhys / (1024*1024)) << " MB free\n";
+    }
+
+    dump << "==================\n\n";
+    dump.close();
+}
+
 void Logger::RotateIfNeeded() {
     if (!std::filesystem::exists(m_logPath)) return;
     auto size = std::filesystem::file_size(m_logPath);

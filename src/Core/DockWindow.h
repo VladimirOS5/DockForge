@@ -9,6 +9,7 @@
 #include "../Renderer/AnimatedIcon.h"
 #include "../Renderer/BadgeRenderer.h"
 #include "../Renderer/TweenEngine.h"
+#include "../Renderer/AudioReactiveEffect.h"
 #include "../Utils/Config.h"
 #include "../Shell/ShellHookManager.h"
 #include "../Shell/WindowManager.h"
@@ -17,6 +18,7 @@
 #include "../Shell/TrayIconManager.h"
 #include "../Shell/StartButton.h"
 #include "../Shell/DockContextMenu.h"
+#include "../Plugin/PluginManager.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -31,6 +33,7 @@ struct DockIcon {
     std::wstring displayName;
     std::wstring exePath;
     std::wstring processName;
+    std::wstring tooltip;
     LoadedIcon loadedIcon;
     AnimatedIcon animator;
     AtlasEntry atlasEntry;
@@ -110,6 +113,7 @@ private:
     std::unique_ptr<BlurEffect> m_blur;
     std::unique_ptr<AcrylicEffect> m_acrylic;
     std::unique_ptr<LiquidGlassEffect> m_liquidGlass;
+    std::unique_ptr<AudioReactiveEffect> m_audioReactive;
     std::unique_ptr<FrameLimiter> m_frameLimiter;
     std::unique_ptr<IconLoader> m_iconLoader;
     std::unique_ptr<TextureAtlas> m_textureAtlas;
@@ -119,7 +123,7 @@ private:
 
     bool m_running = true;
     float m_animTime = 0.0f;
-    int m_currentEffect = 1;
+    int m_currentEffect = 0; // 0=Solid, 1=Acrylic, 2=LiquidGlass, 3=AudioReactive
     int m_hoveredIcon = -1;
     int m_previewIcon = -1;
 

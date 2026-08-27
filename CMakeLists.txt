@@ -68,6 +68,10 @@ add_executable(DockForge WIN32
     src/Renderer/GradientFlow.h
     src/Renderer/AudioReactiveEffect.cpp
     src/Renderer/AudioReactiveEffect.h
+    src/Updater/OTAUpdater.cpp
+    src/Updater/OTAUpdater.h
+    src/Updater/VersionInfo.cpp
+    src/Updater/VersionInfo.h
     src/Utils/Logger.cpp
     src/Utils/Logger.h
     src/Utils/Config.cpp
@@ -78,12 +82,28 @@ add_executable(DockForge WIN32
     src/Utils/PerformanceProfile.h
     src/Utils/ScreenCapture.cpp
     src/Utils/ScreenCapture.h
+    src/Utils/FallbackManager.cpp
+    src/Utils/FallbackManager.h
 )
 
 target_compile_definitions(DockForge PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
 
 target_link_libraries(DockForge PRIVATE
-    d2d1 dwrite windowscodecs shlwapi user32 shell32 gdi32 ole32 oleaut32 d3d11 dxgi comctl32 dwmapi psapi mmdevapi
+    d2d1 dwrite windowscodecs shlwapi user32 shell32 gdi32 ole32 oleaut32 d3d11 dxgi comctl32 dwmapi psapi mmdevapi wininet crypt32
 )
+
+# Version info resource
+set(VERSION_MAJOR 1)
+set(VERSION_MINOR 0)
+set(VERSION_PATCH 0)
+set(VERSION_BUILD 0)
+
+configure_file(
+    ${CMAKE_SOURCE_DIR}/res/version.rc.in
+    ${CMAKE_BINARY_DIR}/version.rc
+    @ONLY
+)
+
+target_sources(DockForge PRIVATE ${CMAKE_BINARY_DIR}/version.rc)
 
 add_subdirectory(watchdog)

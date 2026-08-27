@@ -36,9 +36,30 @@ struct DockConfig {
     bool showStartButton = true;
     std::string startButtonSkin = "default";
 
-    // Chat 09 additions
-    std::string multiMonitorMode = "primary";      // "primary", "all"
-    std::string performanceProfile = "balanced";   // "eco", "balanced", "performance", "custom"
+    // Chat 09
+    std::string multiMonitorMode = "primary";
+    std::string performanceProfile = "balanced";
+
+    // Chat 10
+    bool audioReactiveBackground = false;
+    std::string audioReactiveMode = "both";
+    int particleCount = 300;
+    bool wallpaperEngineIntegration = true;
+    float audioSmoothing = 0.85f;
+    float audioSensitivity = 1.5f;
+    bool particleGlow = true;
+    bool particleTrails = false;
+    std::string gradientDirection = "horizontal";
+
+    // Chat 11 — OTA & Fallback
+    bool autoCheckUpdates = true;
+    int updateCheckInterval = 60; // minutes
+    std::string updateChannel = "stable"; // "stable", "beta", "alpha"
+    bool autoDownloadUpdates = true;
+    bool autoInstallUpdates = false;
+    std::string updateServerUrl = "https://api.dockforge.app/v1/releases";
+    bool safeMode = false;
+    bool runSelfTestsOnStart = true;
 };
 
 class Config {

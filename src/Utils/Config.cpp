@@ -64,9 +64,30 @@ bool Config::LoadFromFile() {
         c.showStartButton = j.value("showStartButton", true);
         c.startButtonSkin = j.value("startButtonSkin", std::string("default"));
 
-        // Chat 09 additions
+        // Chat 09
         c.multiMonitorMode = j.value("multiMonitorMode", std::string("primary"));
         c.performanceProfile = j.value("performanceProfile", std::string("balanced"));
+
+        // Chat 10
+        c.audioReactiveBackground = j.value("audioReactiveBackground", false);
+        c.audioReactiveMode = j.value("audioReactiveMode", std::string("both"));
+        c.particleCount = j.value("particleCount", 300);
+        c.wallpaperEngineIntegration = j.value("wallpaperEngineIntegration", true);
+        c.audioSmoothing = j.value("audioSmoothing", 0.85f);
+        c.audioSensitivity = j.value("audioSensitivity", 1.5f);
+        c.particleGlow = j.value("particleGlow", true);
+        c.particleTrails = j.value("particleTrails", false);
+        c.gradientDirection = j.value("gradientDirection", std::string("horizontal"));
+
+        // Chat 11
+        c.autoCheckUpdates = j.value("autoCheckUpdates", true);
+        c.updateCheckInterval = j.value("updateCheckInterval", 60);
+        c.updateChannel = j.value("updateChannel", std::string("stable"));
+        c.autoDownloadUpdates = j.value("autoDownloadUpdates", true);
+        c.autoInstallUpdates = j.value("autoInstallUpdates", false);
+        c.updateServerUrl = j.value("updateServerUrl", std::string("https://api.dockforge.app/v1/releases"));
+        c.safeMode = j.value("safeMode", false);
+        c.runSelfTestsOnStart = j.value("runSelfTestsOnStart", true);
 
         std::string theme = j.value("theme", std::string("auto"));
         if (theme == "light") ThemeManager::Instance().SetMode(ThemeMode::Light);
@@ -95,9 +116,27 @@ bool Config::SaveToFile() {
         j["windowGrouping"] = c.windowGrouping; j["showTrayIcons"] = c.showTrayIcons; j["showStartButton"] = c.showStartButton;
         j["startButtonSkin"] = c.startButtonSkin;
 
-        // Chat 09 additions
         j["multiMonitorMode"] = c.multiMonitorMode;
         j["performanceProfile"] = c.performanceProfile;
+
+        j["audioReactiveBackground"] = c.audioReactiveBackground;
+        j["audioReactiveMode"] = c.audioReactiveMode;
+        j["particleCount"] = c.particleCount;
+        j["wallpaperEngineIntegration"] = c.wallpaperEngineIntegration;
+        j["audioSmoothing"] = c.audioSmoothing;
+        j["audioSensitivity"] = c.audioSensitivity;
+        j["particleGlow"] = c.particleGlow;
+        j["particleTrails"] = c.particleTrails;
+        j["gradientDirection"] = c.gradientDirection;
+
+        j["autoCheckUpdates"] = c.autoCheckUpdates;
+        j["updateCheckInterval"] = c.updateCheckInterval;
+        j["updateChannel"] = c.updateChannel;
+        j["autoDownloadUpdates"] = c.autoDownloadUpdates;
+        j["autoInstallUpdates"] = c.autoInstallUpdates;
+        j["updateServerUrl"] = c.updateServerUrl;
+        j["safeMode"] = c.safeMode;
+        j["runSelfTestsOnStart"] = c.runSelfTestsOnStart;
 
         auto mode = ThemeManager::Instance().GetMode();
         j["theme"] = (mode == ThemeMode::Light) ? "light" : (mode == ThemeMode::Dark) ? "dark" : "auto";
@@ -112,11 +151,13 @@ bool Config::ExportTheme(const std::string& path) {
         auto& c = m_config;
         j["backgroundEffect"] = c.backgroundEffect; j["blurRadius"] = c.blurRadius; j["tintOpacity"] = c.tintOpacity;
         j["tintR"] = c.tintR; j["tintG"] = c.tintG; j["tintB"] = c.tintB;
-        j["refractionStrength"] = c.refractionStrength; j["glowIntensity"] = c.glowIntensity; j["liquidGlassSaturation"] = c.liquidGlassSaturation;
-        j["animationSpeed"] = c.animationSpeed; j["magnificationScale"] = c.magnificationScale; j["magnificationRange"] = c.magnificationRange;
-        j["magnificationEasing"] = c.magnificationEasing; j["jumpAnimationSpeed"] = c.jumpAnimationSpeed;
-        j["genieAnimationSpeed"] = c.genieAnimationSpeed; j["badgePulseSpeed"] = c.badgePulseSpeed;
-        j["slideAnimationSpeed"] = c.slideAnimationSpeed; j["defaultEasing"] = c.defaultEasing;
+        j["refractionStrength"] = c.refractionStrength;
+        j["glowIntensity"] = c.glowIntensity; j["liquidGlassSaturation"] = c.liquidGlassSaturation;
+        j["animationSpeed"] = c.animationSpeed; j["magnificationScale"] = c.magnificationScale;
+        j["magnificationRange"] = c.magnificationRange; j["magnificationEasing"] = c.magnificationEasing;
+        j["jumpAnimationSpeed"] = c.jumpAnimationSpeed; j["genieAnimationSpeed"] = c.genieAnimationSpeed;
+        j["badgePulseSpeed"] = c.badgePulseSpeed; j["slideAnimationSpeed"] = c.slideAnimationSpeed;
+        j["defaultEasing"] = c.defaultEasing;
         auto mode = ThemeManager::Instance().GetMode();
         j["theme"] = (mode == ThemeMode::Light) ? "light" : (mode == ThemeMode::Dark) ? "dark" : "auto";
         std::ofstream f(path); f << j.dump(4); return true;

@@ -1,6 +1,7 @@
 #include "DockWindow.h"
 #include "../Utils/Logger.h"
 #include "../Utils/ScreenCapture.h"
+#include "../Utils/Theme.h"
 #include "MonitorManager.h"
 #include <windowsx.h>
 #include <chrono>
@@ -64,11 +65,25 @@ bool DockWindow::Create(HINSTANCE hInstance, const MonitorInfo* monitor) {
         m_liquidGlass->Initialize(m_effectRenderer->GetContext(), dockWidth, DOCK_HEIGHT);
     }
 
+    m_audioReactive = std::make_unique<AudioReactiveEffect>();
+
     m_frameLimiter = std::make_unique<FrameLimiter>();
     auto& cfg = Config::Instance().Get();
     m_frameLimiter->SetTargetFPS(cfg.targetFPS);
     m_frameLimiter->SetAdaptive(cfg.adaptiveFPS);
     m_frameLimiter->SetVSync(cfg.vsync);
+
+    // Set initial effect from config
+    if (cfg.audioReactiveBackground) {
+        m_currentEffect = 3;
+        m_audioReactive->Initialize();
+    } else if (cfg.backgroundEffect == "acrylic") {
+        m_currentEffect = 1;
+    } else if (cfg.backgroundEffect == "liquidGlass") {
+        m_currentEffect = 2;
+    } else {
+        m_currentEffect = 0;
+    }
 
     LoadDemoIcons();
     if (cfg.showStartButton) LoadStartButton();
@@ -132,7 +147,7 @@ void DockWindow::LoadDemoIcons() {
         icon.genieSkew = 0.0f; icon.genieScaleY = 1.0f; icon.genieOpacity = 1.0f;
         icon.badgeScale = 1.0f; icon.indicatorOpacity = 1.0f;
 
-        size_t pos = app.path.find_last_of(L"\\\\/");
+        size_t pos = app.path.find_last_of(L"\\/");
         icon.processName = (pos != std::wstring::npos) ? app.path.substr(pos + 1) : app.path;
 
         if (app.path.find(L":") != std::wstring::npos) {
@@ -140,7 +155,7 @@ void DockWindow::LoadDemoIcons() {
         } else {
             wchar_t sysPath[MAX_PATH];
             GetSystemDirectoryW(sysPath, MAX_PATH);
-            icon.loadedIcon = m_iconLoader->LoadFromExe(std::wstring(sysPath) + L"\\\\" + app.path, ICON_SIZE);
+            icon.loadedIcon = m_iconLoader->LoadFromExe(std::wstring(sysPath) + L"\\" + app.path, ICON_SIZE);
         }
 
         if (!icon.loadedIcon.frames.empty()) {
@@ -271,6 +286,7 @@ void DockWindow::RunMessageLoop() {
         PluginManager::Instance().Update(deltaTime);
         UpdateAnimations(deltaTime);
         if (m_liquidGlass) m_liquidGlass->UpdateAnimation(deltaTime);
+        if (m_audioReactive) m_audioReactive->Update(deltaTime);
         if (!m_frameLimiter->ShouldSkipFrame()) OnPaint();
         m_frameLimiter->EndFrame();
     }
@@ -495,9 +511,21 @@ void DockWindow::ShowContextMenu(int iconIndex, int x, int y) {
 }
 
 void DockWindow::CycleEffect() {
-    m_currentEffect = (m_currentEffect + 1) % 3;
-    const char* names[] = { "Solid", "Acrylic", "Liquid Glass" };
+    m_currentEffect = (m_currentEffect + 1) % 4;
+    const char* names[] = { "Solid", "Acrylic", "Liquid Glass", "Audio-Reactive" };
     LOG_INFO(std::string("Switched effect to: ") + names[m_currentEffect]);
+    
+    auto& cfg = Config::Instance().GetMutable();
+    if (m_currentEffect == 3) {
+        cfg.audioReactiveBackground = true;
+        cfg.backgroundEffect = "audioReactive";
+        if (m_audioReactive && !m_audioReactive->IsInitialized()) {
+            m_audioReactive->Initialize();
+        }
+    } else {
+        cfg.audioReactiveBackground = false;
+        cfg.backgroundEffect = (m_currentEffect == 1) ? "acrylic" : (m_currentEffect == 2) ? "liquidGlass" : "solid";
+    }
 }
 
 void DockWindow::SetIconHover(int index, bool hovered) {
@@ -635,18 +663,38 @@ void DockWindow::OnPaint() {
 }
 
 void DockWindow::DrawBackgroundEffect() {
-    if (!m_effectRenderer || !m_effectRenderer->IsInitialized()) {
-        RECT rc; GetClientRect(m_hwnd, &rc);
-        float w = static_cast<float>(rc.right - rc.left);
-        float h = static_cast<float>(rc.bottom - rc.top);
+    RECT rc; GetClientRect(m_hwnd, &rc);
+    int w = rc.right - rc.left, h = rc.bottom - rc.top;
+    float drawY = m_slideOffsetY;
+    auto& cfg = Config::Instance().Get();
+
+    // Audio-reactive mode: render directly without screen capture blur
+    if (m_currentEffect == 3 && m_audioReactive && m_audioReactive->IsInitialized()) {
+        // Render audio-reactive background
+        m_audioReactive->Render(m_renderer->GetRenderTarget(), 0, drawY, static_cast<float>(w), static_cast<float>(h));
+        
+        // Subtle overlay for dock readability
         auto& colors = ThemeManager::Instance().GetColors();
-        m_renderer->DrawRoundedRect(0, m_slideOffsetY, w, h, DOCK_CORNER_RADIUS, colors.background.r, colors.background.g, colors.background.b, 0.88f * m_slideOpacity);
+        m_renderer->DrawRoundedRect(0, drawY, static_cast<float>(w), static_cast<float>(h), 
+            DOCK_CORNER_RADIUS, colors.background.r, colors.background.g, colors.background.b, 0.15f * m_slideOpacity);
+        
+        // Top highlight line
+        m_renderer->FillRect(DOCK_CORNER_RADIUS, drawY, w - DOCK_CORNER_RADIUS * 2, 1.0f, 
+            0.5f, 0.5f, 0.55f, 0.4f * m_slideOpacity);
         return;
     }
 
-    RECT rc; GetClientRect(m_hwnd, &rc);
-    int w = rc.right - rc.left, h = rc.bottom - rc.top;
+    // Fallback if effect renderer not available
+    if (!m_effectRenderer || !m_effectRenderer->IsInitialized()) {
+        float fw = static_cast<float>(w);
+        float fh = static_cast<float>(h);
+        auto& colors = ThemeManager::Instance().GetColors();
+        m_renderer->DrawRoundedRect(0, drawY, fw, fh, DOCK_CORNER_RADIUS, 
+            colors.background.r, colors.background.g, colors.background.b, 0.88f * m_slideOpacity);
+        return;
+    }
 
+    // Standard effects (Acrylic / Liquid Glass)
     Microsoft::WRL::ComPtr<ID2D1Bitmap> screenBitmap;
     POINT pt; GetWindowRect(m_hwnd, reinterpret_cast<LPRECT>(&pt));
     bool hasScreen = ScreenCapture::CaptureRegion(pt.x, pt.y, w, h, m_effectRenderer->GetContext(), screenBitmap.GetAddressOf());
@@ -657,7 +705,6 @@ void DockWindow::DrawBackgroundEffect() {
     m_effectRenderer->EndDraw();
 
     ID2D1Image* effectOutput = nullptr;
-    auto& cfg = Config::Instance().Get();
     if (m_currentEffect == 1 && m_acrylic) {
         m_acrylic->SetBlurRadius(cfg.blurRadius);
         m_acrylic->SetTint(cfg.tintR, cfg.tintG, cfg.tintB, cfg.tintOpacity);
@@ -669,14 +716,16 @@ void DockWindow::DrawBackgroundEffect() {
         effectOutput = m_liquidGlass->Apply(m_effectRenderer->GetTargetBitmap());
     }
 
-    float drawY = m_slideOffsetY;
     if (effectOutput) {
-        m_renderer->DrawBitmap(reinterpret_cast<ID2D1Bitmap*>(effectOutput), 0, drawY, static_cast<float>(w), static_cast<float>(h), 0.9f * m_slideOpacity);
+        m_renderer->DrawBitmap(reinterpret_cast<ID2D1Bitmap*>(effectOutput), 0, drawY, 
+            static_cast<float>(w), static_cast<float>(h), 0.9f * m_slideOpacity);
     } else {
-        m_renderer->DrawBitmap(m_effectRenderer->GetTargetBitmap(), 0, drawY, static_cast<float>(w), static_cast<float>(h), 0.9f * m_slideOpacity);
+        m_renderer->DrawBitmap(m_effectRenderer->GetTargetBitmap(), 0, drawY, 
+            static_cast<float>(w), static_cast<float>(h), 0.9f * m_slideOpacity);
     }
 
-    m_renderer->FillRect(DOCK_CORNER_RADIUS, drawY, w - DOCK_CORNER_RADIUS * 2, 1.0f, 0.5f, 0.5f, 0.55f, 0.4f * m_slideOpacity);
+    m_renderer->FillRect(DOCK_CORNER_RADIUS, drawY, w - DOCK_CORNER_RADIUS * 2, 1.0f, 
+        0.5f, 0.5f, 0.55f, 0.4f * m_slideOpacity);
 }
 
 void DockWindow::DrawIcons() {
@@ -741,6 +790,9 @@ void DockWindow::OnSize(UINT width, UINT height) {
         if (m_acrylic) m_acrylic->Initialize(m_effectRenderer->GetContext(), width, height);
         if (m_liquidGlass) m_liquidGlass->Initialize(m_effectRenderer->GetContext(), width, height);
     }
+    if (m_audioReactive) {
+        // Particles will adapt to new bounds on next render
+    }
     UpdateIconPositions();
 }
 
@@ -763,6 +815,7 @@ void DockWindow::Update(float deltaTime) {
     m_animTime += deltaTime;
     UpdateAnimations(deltaTime);
     if (m_liquidGlass) m_liquidGlass->UpdateAnimation(deltaTime);
+    if (m_audioReactive) m_audioReactive->Update(deltaTime);
 }
 
 void DockWindow::Render() {
