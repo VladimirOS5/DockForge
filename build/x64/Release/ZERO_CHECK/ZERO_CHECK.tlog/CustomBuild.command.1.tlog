@@ -1,0 +1,10 @@
+^C:\USERS\77TVL\DOCUMENTS\GITHUB\DOCKFORGE\BUILD\CMAKEFILES\4803EF072B2A7BC423A8F526349751D4\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/77tvl/Documents/GitHub/DockForge -BC:/Users/77tvl/Documents/GitHub/DockForge/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/77tvl/Documents/GitHub/DockForge/build/DockForge.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

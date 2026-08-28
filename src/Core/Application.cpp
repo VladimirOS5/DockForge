@@ -30,12 +30,10 @@ bool Application::Initialize(HINSTANCE hInstance) {
     Config::Instance().LoadFromFile();
     auto& cfg = Config::Instance().Get();
 
-    // Safe mode check
     if (cfg.safeMode) {
         FallbackManager::Instance().EnterSafeMode();
     }
 
-    // Crash recovery
     if (FallbackManager::Instance().DidPreviousSessionCrash()) {
         LOG_WARN("Previous session crashed. Running diagnostics...");
         FallbackManager::Instance().EnterSafeMode();
@@ -68,22 +66,13 @@ bool Application::Initialize(HINSTANCE hInstance) {
     if (FAILED(hr)) LOG_WARN("CoInitializeEx failed, continuing...");
 
     ThemeManager::Instance().Refresh();
-
-    // System info logging
     LogSystemInfo();
-
-    // DPI initialization
     InitializeDPI();
-
-    // Memory tracking
     InitializeMemoryTracking();
 
-    // Self-tests
     if (cfg.runSelfTestsOnStart) {
         RunSelfTests();
     }
-
-    // Stability tests (if enabled)
     if (cfg.runStabilityTestsOnStart) {
         RunStabilityTests();
     }
@@ -102,17 +91,14 @@ bool Application::Initialize(HINSTANCE hInstance) {
         }
     });
 
-    auto taskbarHider = std::make_unique<TaskbarHider>();
-    if (!taskbarHider->Hide()) LOG_WARN("Failed to hide taskbar, continuing with overlay mode...");
-    taskbarHider.release();
+    m_taskbarHider = std::make_unique<TaskbarHider>();
+    if (!m_taskbarHider->Hide()) LOG_WARN("Failed to hide taskbar, continuing with overlay mode...");
 
     if (!SettingsWindow::Instance().Create(hInstance)) {
         LOG_WARN("Failed to create settings window");
     }
 
     MonitorManager::Instance().Initialize(hInstance);
-
-    // OTA initialization
     InitializeOTA();
     InitializeFallback();
 
@@ -123,33 +109,26 @@ bool Application::Initialize(HINSTANCE hInstance) {
 
 void Application::LogSystemInfo() {
     auto& cfg = Config::Instance().Get();
-
-    // Windows version
     OSVERSIONINFOEXW osvi = { sizeof(osvi) };
     #pragma warning(suppress: 4996)
     GetVersionExW(reinterpret_cast<OSVERSIONINFOW*>(&osvi));
-    LOG_INFO("Windows: " + std::to_string(osvi.dwMajorVersion) + "." + 
+    LOG_INFO("Windows: " + std::to_string(osvi.dwMajorVersion) + "." +
              std::to_string(osvi.dwMinorVersion) + "." + std::to_string(osvi.dwBuildNumber));
 
-    // CPU info
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     LOG_INFO("CPU cores: " + std::to_string(si.dwNumberOfProcessors));
 
-    // Memory
     MEMORYSTATUSEX mem = { sizeof(mem) };
     if (GlobalMemoryStatusEx(&mem)) {
         LOG_INFO("RAM: " + std::to_string(mem.ullTotalPhys / (1024*1024*1024)) + " GB total, " +
                  std::to_string(mem.ullAvailPhys / (1024*1024*1024)) + " GB free");
     }
 
-    // DPI
     if (cfg.logDPIInfo) {
         float scale = DPIHelper::GetSystemScale();
         LOG_INFO("System DPI scale: " + std::to_string(scale));
     }
-
-    // HDR
     if (cfg.logHDRInfo) {
         HDRHelper::LogDisplayInfo();
     }
@@ -175,7 +154,6 @@ void Application::RunStabilityTests() {
     StabilityTest::Instance().RegisterDefaultTests();
     auto reports = StabilityTest::Instance().RunAll();
 
-    // Write report
     wchar_t localAppData[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, localAppData))) {
         std::filesystem::path reportPath = std::filesystem::path(localAppData) / L"DockForge" / L"stability_report.txt";
@@ -193,12 +171,8 @@ void Application::RunLongTermStabilityTest() {
 
     LOG_INFO("Starting long-term stability simulation (" + std::to_string(cfg.stabilityTestDurationHours) + "h)...");
     bool ok = StabilityTest::Instance().RunLongTermSimulation(simConfig);
-
-    if (ok) {
-        LOG_INFO("Long-term simulation PASSED");
-    } else {
-        LOG_ERROR("Long-term simulation FAILED");
-    }
+    if (ok) LOG_INFO("Long-term simulation PASSED");
+    else LOG_ERROR("Long-term simulation FAILED");
 }
 
 void Application::PrintMemoryReport() {
@@ -221,23 +195,12 @@ void Application::InitializeOTA() {
 
     updater.SetProgressCallback([](const UpdateProgress& progress) {
         switch (progress.state) {
-            case UpdateState::Checking:
-                LOG_INFO("OTA: Checking for updates...");
-                break;
-            case UpdateState::UpdateAvailable:
-                LOG_INFO("OTA: Update available - " + progress.targetVersion.ToString());
-                break;
-            case UpdateState::Downloading:
-                LOG_INFO("OTA: Downloading update... " + std::to_string(static_cast<int>(progress.downloadPercent)) + "%");
-                break;
-            case UpdateState::Verified:
-                LOG_INFO("OTA: Update downloaded and verified");
-                break;
-            case UpdateState::Error:
-                LOG_ERROR("OTA Error [" + std::to_string(static_cast<int>(progress.error)) + "]: " + progress.errorDetails);
-                break;
-            default:
-                break;
+            case UpdateState::Checking: LOG_INFO("OTA: Checking for updates..."); break;
+            case UpdateState::UpdateAvailable: LOG_INFO("OTA: Update available - " + progress.targetVersion.ToString()); break;
+            case UpdateState::Downloading: LOG_INFO("OTA: Downloading update... " + std::to_string(static_cast<int>(progress.downloadPercent)) + "%"); break;
+            case UpdateState::Verified: LOG_INFO("OTA: Update downloaded and verified"); break;
+            case UpdateState::Error: LOG_ERROR("OTA Error [" + std::to_string(static_cast<int>(progress.error)) + "]: " + progress.errorDetails); break;
+            default: break;
         }
     });
 
@@ -250,23 +213,17 @@ void Application::InitializeOTA() {
     });
 
     updater.CleanupOldInstallers();
-    m_otaTimer = -30.0f;
+    m_otaTimer = 0.0f;
     LOG_INFO("OTA Updater initialized");
 }
 
 void Application::InitializeFallback() {
-    FallbackManager::Instance().RegisterComponent("Renderer", []() {
-        return true;
-    });
-    FallbackManager::Instance().RegisterComponent("ShellHooks", []() {
-        return ShellHookManager::Instance().IsInitialized();
-    });
-    FallbackManager::Instance().RegisterComponent("AudioCapture", []() {
-        return true;
-    });
+    FallbackManager::Instance().RegisterComponent("Renderer", []() { return true; });
+    FallbackManager::Instance().RegisterComponent("ShellHooks", []() { return ShellHookManager::Instance().IsInitialized(); });
+    FallbackManager::Instance().RegisterComponent("AudioCapture", []() { return true; });
     FallbackManager::Instance().RegisterComponent("Memory", []() {
         auto metrics = MemoryTracker::Instance().GetMetrics();
-        return metrics.currentBytes < 100 * 1024 * 1024; // < 100MB
+        return metrics.currentBytes < 100 * 1024 * 1024;
     });
     LOG_INFO("Fallback manager initialized with 4 health checks");
 }
@@ -278,11 +235,18 @@ void Application::RunSelfTests() {
     }
 }
 
+// UTF-8 to wstring helper
+static std::wstring ToWString(const std::string& str) {
+    if (str.empty()) return {};
+    int size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
+    std::wstring result(size - 1, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, result.data(), size);
+    return result;
+}
+
 void Application::ShowUpdateNotification() {
     auto progress = OTAUpdater::Instance().GetProgress();
-    std::wstring msg = L"DockForge update " + 
-        std::wstring(progress.targetVersion.ToString().begin(), progress.targetVersion.ToString().end()) +
-        L" is ready to install.";
+    std::wstring msg = L"DockForge update " + ToWString(progress.targetVersion.ToString()) + L" is ready to install.";
     LOG_INFO("Update notification: " + progress.targetVersion.ToString() + " ready");
 }
 
@@ -323,17 +287,13 @@ int Application::Run() {
             continue;
         }
 
-        // OTA background checks
         UpdateOTA(deltaTime);
 
-        // Health checks every 10 seconds
         static float healthTimer = 0;
         healthTimer += deltaTime;
         if (healthTimer >= 10.0f) {
             healthTimer = 0;
             FallbackManager::Instance().RunHealthChecks();
-
-            // Periodic memory report (every 10s * 6 = every minute)
             static int healthCount = 0;
             healthCount++;
             if (healthCount >= 6) {
@@ -350,7 +310,6 @@ int Application::Run() {
         MonitorManager::Instance().UpdateAll(deltaTime);
         PluginManager::Instance().Update(deltaTime);
         TrayIconManager::Instance().Refresh();
-
         MonitorManager::Instance().RenderAll();
     }
 
@@ -362,10 +321,11 @@ void Application::UpdateOTA(float deltaTime) {
     if (m_otaTimer >= Config::Instance().Get().updateCheckInterval * 60.0f) {
         m_otaTimer = 0;
         OTAUpdater::Instance().Update(deltaTime);
-    } else if (m_otaTimer < 0) {
-        if (m_otaTimer >= 0) {
-            OTAUpdater::Instance().CheckForUpdateAsync();
-        }
+    }
+    static bool initialCheckDone = false;
+    if (!initialCheckDone && m_otaTimer > 5.0f) {
+        initialCheckDone = true;
+        OTAUpdater::Instance().CheckForUpdateAsync();
     }
 }
 
@@ -375,10 +335,8 @@ void Application::Shutdown() {
 
     OTAUpdater::Instance().CancelOperation();
 
-    // Final memory report
     if (Config::Instance().Get().enableMemoryTracking) {
         MemoryTracker::Instance().PrintReport();
-
         wchar_t localAppData[MAX_PATH];
         if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, 0, localAppData))) {
             std::filesystem::path memReport = std::filesystem::path(localAppData) / L"DockForge" / L"memory_report.txt";
@@ -393,11 +351,11 @@ void Application::Shutdown() {
     WindowManager::Instance().Shutdown();
     ShellHookManager::Instance().Shutdown();
 
-    auto taskbarHider = std::make_unique<TaskbarHider>();
-    if (!taskbarHider->Restore()) LOG_ERROR("Failed to restore taskbar during shutdown!");
+    if (m_taskbarHider) {
+        if (!m_taskbarHider->Restore()) LOG_ERROR("Failed to restore taskbar during shutdown!");
+    }
 
     CoUninitialize();
-
     FallbackManager::Instance().MarkSessionClean();
 
     LOG_INFO("Shutdown complete. Goodbye!");

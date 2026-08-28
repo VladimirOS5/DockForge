@@ -1,23 +1,15 @@
 #include "StartButton.h"
 #include "../Utils/Logger.h"
-
-void StartButton::OpenStartMenu() {
-    INPUT inputs[2] = {};
-    inputs[0].type = INPUT_KEYBOARD;
-    inputs[0].ki.wVk = VK_LWIN;
-    inputs[1].type = INPUT_KEYBOARD;
-    inputs[1].ki.wVk = VK_LWIN;
-    inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
-    SendInput(2, inputs, sizeof(INPUT));
-    LOG_INFO("Start menu opened");
-}
-
-void StartButton::OpenStartMenuSettings() {
-    ShellExecuteW(nullptr, L"open", L"ms-settings:personalization-start", nullptr, nullptr, SW_SHOW);
-}
+#include <shellapi.h>  // FIX: added for ShellExecuteW
 
 std::wstring StartButton::GetSkinIconPath(const std::string& skin) {
-    if (skin == "classic") return L"C:\\Windows\\System32\\shell32.dll,43";
-    if (skin == "modern") return L"C:\\Windows\\System32\\imageres.dll,109";
-    return L"C:\\Windows\\System32\\imageres.dll,109";
+    if (skin == "default") return L"shell:::{48e7caab-b918-4a58-a94d-5053194fdb18}";
+    if (skin == "win10") return L"C:/Windows/Branding/ShellBrd/mpr.dll,101";
+    if (skin == "win11") return L"C:/Windows/Branding/ShellBrd/mpr.dll,102";
+    return L"shell:::{48e7caab-b918-4a58-a94d-5053194fdb18}";
+}
+
+void StartButton::OpenStartMenu() {
+    LOG_INFO("Opening Start Menu");
+    ShellExecuteW(nullptr, L"open", L"explorer.exe", L"shell:::{48e7caab-b918-4a58-a94d-5053194fdb18}", nullptr, SW_SHOW);
 }

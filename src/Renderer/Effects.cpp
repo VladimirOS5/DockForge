@@ -51,13 +51,12 @@ bool AcrylicEffect::CreateNoiseBitmap(UINT width, UINT height) {
     std::vector<uint8_t> pixels(width * height * 4);
     for (UINT y = 0; y < height; ++y) {
         for (UINT x = 0; x < width; ++x) {
-            // Simple pseudo-random noise
-            uint8_t v = static_cast<uint8_t>((rand() % 40) + 100); // 100-140 range
+            uint8_t v = static_cast<uint8_t>((rand() % 40) + 100);
             UINT idx = (y * width + x) * 4;
-            pixels[idx] = v;     // R
-            pixels[idx+1] = v;   // G
-            pixels[idx+2] = v;   // B
-            pixels[idx+3] = 15;  // A (very subtle)
+            pixels[idx] = v;
+            pixels[idx+1] = v;
+            pixels[idx+2] = v;
+            pixels[idx+3] = 15;
         }
     }
     D2D1_BITMAP_PROPERTIES props = {};
@@ -68,14 +67,13 @@ bool AcrylicEffect::CreateNoiseBitmap(UINT width, UINT height) {
 }
 
 ID2D1Image* AcrylicEffect::Apply(ID2D1Image* input) {
-    if (!m_blur || !input) return input;
+    // FIX: Added nullptr checks
+    if (!m_blur || !m_colorMatrix || !input) return input;
 
-    // 1. Blur the input
     m_blur->SetInput(0, input);
     ID2D1Image* blurred = nullptr;
     m_blur->GetOutput(&blurred);
 
-    // 2. Apply color matrix for tint
     D2D1_MATRIX_5X4_F matrix = {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
@@ -91,9 +89,6 @@ ID2D1Image* AcrylicEffect::Apply(ID2D1Image* input) {
 
     ID2D1Image* tinted = nullptr;
     m_colorMatrix->GetOutput(&tinted);
-
-    // Note: In full implementation we would blend noise here.
-    // For now, color matrix tinted blur is the acrylic look.
     return tinted;
 }
 
@@ -132,7 +127,6 @@ bool LiquidGlassEffect::Initialize(ID2D1DeviceContext* dc, UINT width, UINT heig
     if (!CreateDisplacementBitmap(width, height)) {
         LOG_WARN("Failed to create displacement bitmap");
     }
-
     return true;
 }
 
@@ -146,10 +140,10 @@ bool LiquidGlassEffect::CreateDisplacementBitmap(UINT width, UINT height) {
             float dx = std::sin(nx * 20.0f + m_time) * 0.5f + 0.5f;
             float dy = std::cos(ny * 20.0f + m_time * 0.7f) * 0.5f + 0.5f;
             UINT idx = (y * width + x) * 4;
-            pixels[idx] = static_cast<uint8_t>(dx * 255);   // R = X offset
-            pixels[idx+1] = static_cast<uint8_t>(dy * 255); // G = Y offset
-            pixels[idx+2] = 128; // B = neutral
-            pixels[idx+3] = 255; // A
+            pixels[idx] = static_cast<uint8_t>(dx * 255);
+            pixels[idx+1] = static_cast<uint8_t>(dy * 255);
+            pixels[idx+2] = 128;
+            pixels[idx+3] = 255;
         }
     }
     D2D1_BITMAP_PROPERTIES props = {};
@@ -160,18 +154,13 @@ bool LiquidGlassEffect::CreateDisplacementBitmap(UINT width, UINT height) {
 }
 
 ID2D1Image* LiquidGlassEffect::Apply(ID2D1Image* input) {
-    if (!m_blur || !m_displacement || !input) return input;
+    if (!m_blur || !m_displacement || !m_colorMatrix || !input) return input;
 
-    // 1. Heavy blur
     m_blur->SetInput(0, input);
-
-    // 2. Displacement for refraction
     m_displacement->SetInputEffect(0, m_blur.Get());
     if (m_displacementBitmap) {
         m_displacement->SetInput(1, m_displacementBitmap.Get());
     }
-
-    // 3. Saturation boost
     m_colorMatrix->SetInputEffect(0, m_displacement.Get());
 
     ID2D1Image* output = nullptr;
@@ -199,7 +188,6 @@ void LiquidGlassEffect::SetSaturation(float sat) {
 
 void LiquidGlassEffect::UpdateAnimation(float deltaTime) {
     m_time += deltaTime * 2.0f;
-    // Regenerate displacement bitmap for animation
     if (m_displacementBitmap && m_dc) {
         D2D1_SIZE_U size = m_displacementBitmap->GetPixelSize();
         CreateDisplacementBitmap(size.width, size.height);

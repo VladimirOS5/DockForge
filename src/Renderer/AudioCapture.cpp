@@ -83,7 +83,7 @@ void AudioCapture::CaptureThread() {
             samples.clear();
             UINT32 channels = m_waveFormat->nChannels;
             float sampleRate = static_cast<float>(m_waveFormat->nSamplesPerSec);
-            
+
             if (m_waveFormat->wFormatTag == WAVE_FORMAT_IEEE_FLOAT || 
                 (m_waveFormat->wFormatTag == WAVE_FORMAT_EXTENSIBLE && 
                  reinterpret_cast<WAVEFORMATEXTENSIBLE*>(m_waveFormat)->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)) {
@@ -102,29 +102,21 @@ void AudioCapture::CaptureThread() {
                 }
             }
 
-            // Calculate RMS
             float sum = 0.0f;
             for (float s : samples) sum += s * s;
             float rms = std::sqrt(sum / (samples.size() + 1)) * m_sensitivity;
             float smoothedRms = m_rms.load() * m_smoothingFactor + rms * (1.0f - m_smoothingFactor);
             m_rms.store(smoothedRms);
 
-            // Simple time-domain band splitting (lightweight alternative to FFT)
             if (!samples.empty()) {
                 float bassSum = 0.0f, midSum = 0.0f, trebleSum = 0.0f;
                 size_t bassCount = 0, midCount = 0, trebleCount = 0;
-                
-                // Downsample for analysis: use every Nth sample based on sample rate
-                size_t step = static_cast<size_t>(sampleRate / 4410.0f); // ~10ms resolution
+                size_t step = static_cast<size_t>(sampleRate / 4410.0f);
                 if (step < 1) step = 1;
-                
+
                 for (size_t i = step; i < samples.size(); i += step) {
                     float diff = samples[i] - samples[i - step];
                     float absDiff = std::abs(diff);
-                    
-                    // Approximate frequency by zero-crossing rate and amplitude change
-                    // Bass: low rate, high amplitude
-                    // Treble: high rate, low amplitude
                     if (absDiff < 0.05f) {
                         bassSum += absDiff;
                         bassCount++;
@@ -136,16 +128,15 @@ void AudioCapture::CaptureThread() {
                         trebleCount++;
                     }
                 }
-                
+
                 float bass = bassCount > 0 ? (bassSum / bassCount) * m_sensitivity * 3.0f : 0.0f;
                 float mid = midCount > 0 ? (midSum / midCount) * m_sensitivity * 2.0f : 0.0f;
                 float treble = trebleCount > 0 ? (trebleSum / trebleCount) * m_sensitivity : 0.0f;
-                
+
                 m_bass.store(m_bass.load() * m_smoothingFactor + bass * (1.0f - m_smoothingFactor));
                 m_mid.store(m_mid.load() * m_smoothingFactor + mid * (1.0f - m_smoothingFactor));
                 m_treble.store(m_treble.load() * m_smoothingFactor + treble * (1.0f - m_smoothingFactor));
-                
-                // Beat detection: bass peak
+
                 float currentBass = m_bass.load();
                 if (currentBass > m_beatThreshold && currentBass > m_prevBass * 1.3f) {
                     m_beat.store(true);
@@ -154,7 +145,7 @@ void AudioCapture::CaptureThread() {
                 }
                 m_prevBass = currentBass;
             }
-            
+
             m_captureClient->ReleaseBuffer(numFramesAvailable);
         } else if (SUCCEEDED(hr)) {
             m_captureClient->ReleaseBuffer(numFramesAvailable);

@@ -9,10 +9,10 @@ public:
     bool Restore();
     bool IsHidden() const { return m_hidden; }
 private:
-    bool m_hidden = false;
+    bool GetTaskbarRect(RECT& rect);
     HWND m_hTaskbar = nullptr;
     HWND m_hStart = nullptr;
-    UINT m_originalState = ABS_ALWAYSONTOP;
+    bool m_hidden = false;
     RECT m_originalRect = {};
-    bool GetTaskbarRect(RECT& rect);
+    UINT m_originalState = 0;
 };

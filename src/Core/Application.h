@@ -1,6 +1,9 @@
 #pragma once
 #include <windows.h>
 #include <atomic>
+#include <memory>
+
+class TaskbarHider;
 
 class Application {
 public:
@@ -32,4 +35,5 @@ private:
     bool m_restartRequested = false;
     bool m_updatePending = false;
     float m_otaTimer = 0.0f;
+    std::unique_ptr<TaskbarHider> m_taskbarHider;
 };

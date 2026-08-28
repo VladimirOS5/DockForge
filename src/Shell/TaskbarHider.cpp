@@ -20,8 +20,7 @@ bool TaskbarHider::Hide() {
     if (!m_hTaskbar) { LOG_ERROR("Shell_TrayWnd not found"); return false; }
     if (m_hidden) return true;
 
-    APPBARDATA abdGet = {};
-    abdGet.cbSize = sizeof(abdGet);
+    APPBARDATA abdGet = { sizeof(abdGet) };
     abdGet.hWnd = m_hTaskbar;
     m_originalState = (UINT)SHAppBarMessage(ABM_GETSTATE, &abdGet);
     GetTaskbarRect(m_originalRect);
@@ -30,8 +29,7 @@ bool TaskbarHider::Hide() {
     MONITORINFO mi = { sizeof(mi) };
     GetMonitorInfo(hMonitor, &mi);
 
-    APPBARDATA abd = {};
-    abd.cbSize = sizeof(abd);
+    APPBARDATA abd = { sizeof(abd) };
     abd.hWnd = m_hTaskbar;
     abd.uEdge = ABE_BOTTOM;
     abd.lParam = ABS_AUTOHIDE;
@@ -69,15 +67,13 @@ bool TaskbarHider::Restore() {
         ShowWindow(hSecondary, SW_SHOW);
     }
 
-    APPBARDATA abd = {};
-    abd.cbSize = sizeof(abd);
-    abd.hWnd = m_hTaskbar;
-    abd.uEdge = ABE_BOTTOM;
-
     HMONITOR hMonitor = MonitorFromWindow(m_hTaskbar, MONITOR_DEFAULTTOPRIMARY);
     MONITORINFO mi = { sizeof(mi) };
     GetMonitorInfo(hMonitor, &mi);
 
+    APPBARDATA abd = { sizeof(abd) };
+    abd.hWnd = m_hTaskbar;
+    abd.uEdge = ABE_BOTTOM;
     abd.rc.left = mi.rcMonitor.left;
     abd.rc.top = mi.rcMonitor.bottom - 48;
     abd.rc.right = mi.rcMonitor.right;

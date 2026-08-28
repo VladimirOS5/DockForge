@@ -1,25 +1,24 @@
 #pragma once
+#include <windows.h>  // FIX: added for DWORD, HWND, etc.
 #include <string>
 
-enum class PerformanceProfile { Eco, Balanced, Performance, Custom };
+enum class PerformanceProfile { Balanced, Performance, Eco, Custom };
 
 class PerformanceProfileManager {
 public:
     static PerformanceProfileManager& Instance();
     void SetProfile(PerformanceProfile profile);
-    PerformanceProfile GetProfile() const { return m_profile; }
-    void AutoDetect();
-    bool IsFullscreenAppRunning() const;
-    bool IsSystemIdle() const;
+    PerformanceProfile GetProfile() const;
     void Update(float deltaTime);
     bool ShouldPauseRendering() const;
-    bool ShouldReduceEffects() const;
+    bool IsBatterySaver() const;
+    bool IsFullscreenAppRunning() const;
+    float GetCurrentTargetFPS() const;
 private:
     PerformanceProfileManager() = default;
     PerformanceProfile m_profile = PerformanceProfile::Balanced;
-    bool m_paused = false;
-    bool m_fullscreen = false;
-    bool m_idle = false;
+    float m_targetFPS = 60.0f;
+    bool m_shouldPause = false;
     DWORD m_lastInputTick = 0;
-    static constexpr DWORD IDLE_THRESHOLD_MS = 300000; // 5 min
+    static constexpr DWORD IDLE_THRESHOLD_MS = 300000;
 };

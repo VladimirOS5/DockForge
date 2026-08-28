@@ -107,18 +107,11 @@ target_link_libraries(DockForge PRIVATE
     d2d1 dwrite windowscodecs shlwapi user32 shell32 gdi32 ole32 oleaut32 d3d11 dxgi comctl32 dwmapi psapi mmdevapi wininet crypt32 propsys
 )
 
-# Version info resource
-set(VERSION_MAJOR 1)
-set(VERSION_MINOR 0)
-set(VERSION_PATCH 0)
-set(VERSION_BUILD 0)
-
-configure_file(
-    ${CMAKE_SOURCE_DIR}/res/version.rc.in
-    ${CMAKE_BINARY_DIR}/version.rc
-    @ONLY
-)
-
-target_sources(DockForge PRIVATE ${CMAKE_BINARY_DIR}/version.rc)
-
-add_subdirectory(watchdog)
+# NOTE: Uncomment below if you have watchdog/ and res/version.rc.in
+# add_subdirectory(watchdog)
+# set(VERSION_MAJOR 1)
+# set(VERSION_MINOR 0)
+# set(VERSION_PATCH 0)
+# set(VERSION_BUILD 0)
+# configure_file(${CMAKE_SOURCE_DIR}/res/version.rc.in ${CMAKE_BINARY_DIR}/version.rc @ONLY)
+# target_sources(DockForge PRIVATE ${CMAKE_BINARY_DIR}/version.rc)

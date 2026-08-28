@@ -1,0 +1,279 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Core\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Core\Application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Core\DockWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Core\MonitorManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\TaskbarHider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\ShellHookManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\WindowManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\ThumbnailPreview.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\JumpListManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\TrayIconManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\StartButton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\DockContextMenu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\WallpaperEngineIntegration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\UWPHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Settings\SettingsWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Plugin\PluginManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Plugin\BuiltIn\ClockWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Plugin\BuiltIn\SystemMonitorWidget.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Widget\DesktopWidgetWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\D2DRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\EffectRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\Effects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\FrameLimiter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\IconLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\TextureAtlas.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\AnimatedIcon.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\BadgeRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\TweenEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\AudioCapture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\ParticleSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\GradientFlow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\AudioReactiveEffect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Updater\OTAUpdater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Updater\VersionInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Testing\MemoryTracker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Testing\StabilityTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\Logger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\Config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\Theme.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\PerformanceProfile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\ScreenCapture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\FallbackManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\DPIHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\HDRHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Core\Application.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Core\DockWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Core\MonitorManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\TaskbarHider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\ShellHookManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\WindowManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\ThumbnailPreview.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\JumpListManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\TrayIconManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\StartButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\DockContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\WallpaperEngineIntegration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Shell\UWPHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Settings\SettingsWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Plugin\PluginManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Plugin\BuiltIn\ClockWidget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Plugin\BuiltIn\SystemMonitorWidget.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Widget\DesktopWidgetWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\D2DRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\EffectRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\Effects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\FrameLimiter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\IconLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\TextureAtlas.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\AnimatedIcon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\BadgeRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\TweenEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\AudioCapture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\GradientFlow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Renderer\AudioReactiveEffect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Updater\OTAUpdater.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Updater\VersionInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Testing\MemoryTracker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Testing\StabilityTest.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\Logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\Theme.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\PerformanceProfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\ScreenCapture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\FallbackManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\DPIHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\77tvl\Documents\GitHub\DockForge\src\Utils\HDREnums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\77tvl\Documents\GitHub\DockForge\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{01EBD332-E374-38B8-AE35-8FCFDDF52F50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{96BDE403-43DF-3DBC-B704-98EA6C8075F2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

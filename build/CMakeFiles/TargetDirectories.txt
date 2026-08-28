@@ -1,0 +1,3 @@
+C:/Users/77tvl/Documents/GitHub/DockForge/build/CMakeFiles/DockForge.dir
+C:/Users/77tvl/Documents/GitHub/DockForge/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/77tvl/Documents/GitHub/DockForge/build/CMakeFiles/ZERO_CHECK.dir

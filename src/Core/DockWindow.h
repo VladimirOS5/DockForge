@@ -18,6 +18,7 @@
 #include "../Shell/TrayIconManager.h"
 #include "../Shell/StartButton.h"
 #include "../Shell/DockContextMenu.h"
+#include "../Shell/TaskbarHider.h"
 #include "../Plugin/PluginManager.h"
 #include <memory>
 #include <vector>
@@ -97,7 +98,7 @@ private:
     void TriggerBadgePulse(int index);
     void StartSlideIn();
     void StartSlideOut();
-    
+
     void ShowThumbnailPreview(int iconIndex);
     void HideThumbnailPreview();
     void ShowContextMenu(int iconIndex, int x, int y);
@@ -123,7 +124,7 @@ private:
 
     bool m_running = true;
     float m_animTime = 0.0f;
-    int m_currentEffect = 0; // 0=Solid, 1=Acrylic, 2=LiquidGlass, 3=AudioReactive
+    int m_currentEffect = 0;
     int m_hoveredIcon = -1;
     int m_previewIcon = -1;
 
