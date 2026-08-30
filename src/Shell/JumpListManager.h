@@ -1,5 +1,6 @@
 #pragma once
 #include <windows.h>
+#include <wrl/client.h>
 #include <string>
 #include <vector>
 
@@ -15,8 +16,8 @@ class JumpListManager {
 public:
     static JumpListManager& Instance();
     std::vector<JumpListItem> GetJumpList(const std::wstring& exePath);
-    bool LaunchItem(const JumpListItem& item);
-    
+    void LaunchItem(const JumpListItem& item);
+
 private:
     JumpListManager() = default;
     std::vector<JumpListItem> GetRecentFiles(const std::wstring& exePath);

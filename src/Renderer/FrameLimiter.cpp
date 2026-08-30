@@ -1,14 +1,10 @@
 #include "FrameLimiter.h"
-#include "../Utils/Logger.h"
-#include <windows.h>
-#include <dwmapi.h>  // FIX: added for DwmFlush
-#include <cmath>
 
 FrameLimiter::FrameLimiter() : m_targetFrameTime(1000.0f / 60.0f), m_lastFrameTime(0) {}
 
 void FrameLimiter::SetTargetFPS(int fps) {
     m_targetFPS = fps;
-    m_targetFrameTime = 1000.0 / fps;
+    m_targetFrameTime = 1000.0 / static_cast<double>(fps);
 }
 
 void FrameLimiter::BeginFrame() {
@@ -22,20 +18,17 @@ void FrameLimiter::EndFrame() {
     m_frameCount++;
 
     auto now = std::chrono::high_resolution_clock::now();
-    double timeSinceLastUpdate = std::chrono::duration<double, std::milli>(now - m_lastFPSUpdate).count();
-    if (timeSinceLastUpdate >= 1000.0) {
-        m_currentFPS = static_cast<float>(m_frameCount * 1000.0 / timeSinceLastUpdate);
+    if (std::chrono::duration<float>(now - m_lastFPSUpdate).count() >= 1.0f) {
+        m_currentFPS = static_cast<float>(m_frameCount);
         m_frameCount = 0;
         m_lastFPSUpdate = now;
     }
 
-    if (m_vsync) {
-        DwmFlush();
-    } else {
-        double sleepTime = m_targetFrameTime - elapsed;
-        if (sleepTime > 1.0) {
-            Sleep(static_cast<DWORD>(sleepTime));
-        }
+    double targetMs = 1000.0 / m_targetFPS;
+    if (elapsed < targetMs) {
+        double sleepMs = targetMs - elapsed;
+        auto sleepDuration = std::chrono::milliseconds(static_cast<long long>(sleepMs));
+        std::this_thread::sleep_for(sleepDuration);
     }
 }
 
@@ -44,10 +37,6 @@ bool FrameLimiter::ShouldSkipFrame() {
     auto now = std::chrono::high_resolution_clock::now();
     double elapsed = std::chrono::duration<double, std::milli>(now - m_frameStart).count();
     return elapsed < m_targetFrameTime * 0.5;
-}
-
-float FrameLimiter::GetCurrentFPS() const {
-    return m_currentFPS;
 }
 
 float FrameLimiter::GetFrameTimeMs() const {

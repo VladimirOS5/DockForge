@@ -5,6 +5,7 @@
 #include <iostream>
 #include "Application.h"
 #include "../Utils/Logger.h"
+#include "../Utils/Config.h"
 #include "../Utils/FallbackManager.h"
 #include "../Updater/VersionInfo.h"
 

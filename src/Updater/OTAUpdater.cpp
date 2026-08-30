@@ -1,3 +1,4 @@
+#include <windows.h>
 #include "OTAUpdater.h"
 #include "../Utils/Logger.h"
 #include "../Utils/Config.h"

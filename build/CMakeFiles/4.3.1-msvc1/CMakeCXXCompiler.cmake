@@ -25,6 +25,7 @@ set(CMAKE_CXX_COMPILER_ARCHITECTURE_ID "x64")
 
 set(MSVC_CXX_ARCHITECTURE_ID x64)
 
+
 set(CMAKE_AR "C:/Program Files/Microsoft Visual Studio/18/Enterprise/VC/Tools/MSVC/14.40.33807/bin/Hostx64/x64/lib.exe")
 set(CMAKE_CXX_COMPILER_AR "")
 set(CMAKE_RANLIB ":")
@@ -97,8 +98,5 @@ set(CMAKE_CXX_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
 set(CMAKE_CXX_COMPILER_CLANG_RESOURCE_DIR "")
 
 set(CMAKE_CXX_COMPILER_IMPORT_STD "")
-### Imported target for C++23 standard library
-set(CMAKE_CXX23_COMPILER_IMPORT_STD_NOT_FOUND_MESSAGE "Unsupported generator: Visual Studio 17 2022")
-
-
-
+set(CMAKE_CXX_COMPILER_IMPORT_STD_ERROR_MESSAGE  "Unsupported generator: Visual Studio 17 2022")
+set(CMAKE_CXX_STDLIB_MODULES_JSON "")

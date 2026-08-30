@@ -1,42 +1,47 @@
 #include "UWPHelper.h"
 #include "../Utils/Logger.h"
-#include <shobjidl_core.h>  // FIX: added for IApplicationActivationManager
-#include <propkey.h>        // FIX: added for PKEY_AppUserModel_ID
+#include <wrl/client.h>
+#include <propsys.h>
+#include <shobjidl_core.h>
+#include <propkey.h>
 #include <shobjidl.h>
-#include <appmodel.h>
 
-bool UWPHelper::IsUWPApp(const std::wstring& path) {
-    return path.find(L"WindowsApps") != std::wstring::npos || path.find(L"://") != std::wstring::npos;
+bool UWPHelper::IsUWPApp(HWND hwnd) {
+    std::wstring aumid = GetAppUserModelId(hwnd);
+    return !aumid.empty();
 }
 
 std::wstring UWPHelper::GetAppUserModelId(HWND hwnd) {
-    std::wstring aumid;
     Microsoft::WRL::ComPtr<IPropertyStore> propStore;
-    if (SUCCEEDED(SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&propStore)))) {
-        PROPVARIANT pv;
-        PropVariantInit(&pv);
-        if (SUCCEEDED(propStore->GetValue(PKEY_AppUserModel_ID, &pv))) {
-            if (pv.vt == VT_LPWSTR && pv.pwszVal) {
-                aumid = pv.pwszVal;
-            }
-            PropVariantClear(&pv);
-        }
+    HRESULT hr = SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&propStore));
+    if (FAILED(hr)) return L"";
+    PROPVARIANT pv;
+    PropVariantInit(&pv);
+    hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
+    std::wstring result;
+    if (SUCCEEDED(hr) && pv.vt == VT_LPWSTR) {
+        result = pv.pwszVal;
+    }
+    PropVariantClear(&pv);
+    return result;
+}
+
+std::wstring UWPHelper::GetPackageFamilyName(const std::wstring& aumid) {
+    size_t pos = aumid.find(L'!');
+    if (pos != std::wstring::npos) {
+        return aumid.substr(0, pos);
     }
     return aumid;
 }
 
-bool UWPHelper::LaunchUWPApp(const std::wstring& aumid) {
-    if (aumid.empty()) return false;
+std::wstring UWPHelper::GetDisplayNameFromAUMID(const std::wstring& aumid) {
     Microsoft::WRL::ComPtr<IApplicationActivationManager> activator;
     HRESULT hr = CoCreateInstance(CLSID_ApplicationActivationManager, nullptr,
-        CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&activator));
-    if (FAILED(hr)) { LOG_ERROR("Failed to create ApplicationActivationManager"); return false; }
-    DWORD pid = 0;
-    hr = activator->ActivateApplication(aumid.c_str(), nullptr, AO_NONE, &pid);
-    if (SUCCEEDED(hr)) {
-        LOG_INFO("Launched UWP app: " + std::string(aumid.begin(), aumid.end()));
-        return true;
-    }
-    LOG_ERROR("Failed to launch UWP app: " + std::to_string(hr));
-    return false;
+        CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&activator));
+    if (FAILED(hr)) return L"";
+    return L"";
+}
+
+std::wstring UWPHelper::GetPackagePath(const std::wstring& packageFamilyName) {
+    return L"";
 }

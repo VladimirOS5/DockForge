@@ -1,76 +1,83 @@
 #include "IconLoader.h"
 #include "../Utils/Logger.h"
 #include <shellapi.h>
-#include <shlwapi.h>
 
 IconLoader::IconLoader() {}
 
 bool IconLoader::Initialize(ID2D1RenderTarget* rt) {
     m_renderTarget = rt;
     HRESULT hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
-        IID_IWICImagingFactory, reinterpret_cast<LPVOID*>(&m_wicFactory));
+        IID_PPV_ARGS(&m_wicFactory));
     if (FAILED(hr)) { LOG_ERROR("Failed to create WIC factory"); return false; }
     return true;
 }
 
-LoadedIcon IconLoader::LoadFromExe(const std::wstring& exePath, int size) {
-    LoadedIcon result;
-    if (!m_renderTarget) return result;
-    HICON hIcon = static_cast<HICON>(LoadImageW(nullptr, exePath.c_str(), IMAGE_ICON, size, size, LR_LOADFROMFILE));
-    if (!hIcon) {
-        WORD iconIndex = 0;
-        ExtractIconExW(exePath.c_str(), iconIndex, &hIcon, nullptr, 1);
-    }
+void IconLoader::Shutdown() {
+    m_wicFactory.Reset();
+    m_renderTarget = nullptr;
+}
+
+LoadedIcon IconLoader::LoadSystemIcon(const std::wstring& exePath, int size) {
+    LoadedIcon icon;
+    HICON hIcon = nullptr;
+    ExtractIconExW(exePath.c_str(), 0, &hIcon, nullptr, 1);
     if (hIcon) {
-        result = LoadFromHICON(hIcon, size);
+        icon = HIconToLoadedIcon(hIcon, size);
         DestroyIcon(hIcon);
     }
-    return result;
+    return icon;
 }
 
-LoadedIcon IconLoader::LoadSystemIcon(const std::wstring& path, int size) {
-    LoadedIcon result;
-    if (!m_renderTarget) return result;
+LoadedIcon IconLoader::LoadFileIcon(const std::wstring& filePath, int size) {
+    LoadedIcon icon;
     SHFILEINFOW sfi = {};
-    if (SHGetFileInfoW(path.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON)) {
-        if (sfi.hIcon) {
-            result = LoadFromHICON(sfi.hIcon, size);
-            DestroyIcon(sfi.hIcon);
-        }
+    if (SHGetFileInfoW(filePath.c_str(), 0, &sfi, sizeof(sfi), SHGFI_ICON | SHGFI_LARGEICON)) {
+        icon = HIconToLoadedIcon(sfi.hIcon, size);
+        DestroyIcon(sfi.hIcon);
     }
-    return result;
+    return icon;
 }
 
-LoadedIcon IconLoader::LoadFromHICON(HICON hIcon, int size) {
-    LoadedIcon result;
-    if (!m_renderTarget || !hIcon || !m_wicFactory) return result;
+LoadedIcon IconLoader::LoadUWPAppIcon(const std::wstring& appUserModelId, int size) {
+    return LoadedIcon();
+}
 
-    // FIX: ICONINFO has no cbSize field!
+bool IconLoader::ExtractIconFrames(const std::wstring& path, int size, LoadedIcon& out) {
+    return false;
+}
+
+LoadedIcon IconLoader::HIconToLoadedIcon(HICON hIcon, int size) {
+    LoadedIcon result;
+    if (!m_wicFactory || !m_renderTarget) return result;
+
     ICONINFO ii = {};
     if (!GetIconInfo(hIcon, &ii)) return result;
 
+    BITMAP bm = {};
+    GetObjectW(ii.hbmColor, sizeof(bm), &bm);
+
     Microsoft::WRL::ComPtr<IWICBitmap> wicBitmap;
-    HRESULT hr = m_wicFactory->CreateBitmapFromHICON(hIcon, &wicBitmap);
-    if (FAILED(hr) || !wicBitmap) {
-        if (ii.hbmColor) DeleteObject(ii.hbmColor);
-        if (ii.hbmMask) DeleteObject(ii.hbmMask);
-        return result;
-    }
+    HRESULT hr = m_wicFactory->CreateBitmapFromHBITMAP(ii.hbmColor, nullptr, WICBitmapUsePremultipliedAlpha, &wicBitmap);
+    DeleteObject(ii.hbmMask);
+    DeleteObject(ii.hbmColor);
+    if (FAILED(hr)) return result;
 
     Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
     hr = m_wicFactory->CreateFormatConverter(&converter);
-    if (SUCCEEDED(hr)) {
-        hr = converter->Initialize(wicBitmap.Get(), GUID_WICPixelFormat32bppPBGRA,
-            WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeMedianCut);
-    }
-    if (SUCCEEDED(hr) && converter) {
-        Microsoft::WRL::ComPtr<ID2D1Bitmap> d2dBitmap;
-        hr = m_renderTarget->CreateBitmapFromWicBitmap(converter.Get(), &d2dBitmap);
-        if (SUCCEEDED(hr) && d2dBitmap) result.frames.push_back(d2dBitmap);
-    }
+    if (FAILED(hr)) return result;
 
-    if (ii.hbmColor) DeleteObject(ii.hbmColor);
-    if (ii.hbmMask) DeleteObject(ii.hbmMask);
-    result.frameCount = static_cast<int>(result.frames.size());
+    hr = converter->Initialize(wicBitmap.Get(), GUID_WICPixelFormat32bppPBGRA,
+        WICBitmapDitherTypeNone, nullptr, 0, WICBitmapPaletteTypeMedianCut);
+    if (FAILED(hr)) return result;
+
+    Microsoft::WRL::ComPtr<ID2D1Bitmap> d2dBitmap;
+    hr = m_renderTarget->CreateBitmapFromWicBitmap(converter.Get(), &d2dBitmap);
+    if (SUCCEEDED(hr) && d2dBitmap) {
+        result.frames.push_back(d2dBitmap);
+        result.frameCount = 1;
+        D2D1_SIZE_F sz = d2dBitmap->GetSize();
+        result.width = static_cast<int>(sz.width);
+        result.height = static_cast<int>(sz.height);
+    }
     return result;
 }

@@ -35,7 +35,7 @@ private:
     void Spawn(float audioLevel, float bassLevel, float trebleLevel);
     void RenderParticle(ID2D1RenderTarget* rt, const Particle& p, float alpha);
     void RenderGlow(ID2D1RenderTarget* rt, const Particle& p, float alpha);
-    
+
     std::vector<Particle> m_particles;
     int m_maxParticles = 200;
     float m_width = 100, m_height = 100;
@@ -43,8 +43,9 @@ private:
     float m_wind = 0.0f;
     float m_spawnTimer = 0;
     float m_time = 0;
+    bool m_trailsEnabled = true;
     std::mt19937 m_rng;
-    
+
     // Cached D2D resources
     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> m_sharedBrush;
     Microsoft::WRL::ComPtr<ID2D1Effect> m_glowEffect;

@@ -1,5 +1,6 @@
 #include "DockContextMenu.h"
 #include "../Utils/Logger.h"
+#include <shellapi.h>
 #include "../Settings/SettingsWindow.h"
 
 void DockContextMenu::Show(HWND hwnd, int x, int y) {
