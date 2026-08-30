@@ -1,0 +1,5 @@
+// В функции LoadExeIcon (строка ~116):
+    LoadedIcon icon = m_iconLoader->LoadFileIcon(path, 32);
+
+// В функции LoadHICONIcon (строка ~188):
+    LoadedIcon icon = m_iconLoader->LoadFromHICON(hIcon, 32);

@@ -1,0 +1,5 @@
+// Добавь в самое начало файла, перед остальными #include:
+#include <wrl/client.h>
+#include <d2d1.h>
+#include <shellscalingapi.h>
+#include <windows.h>

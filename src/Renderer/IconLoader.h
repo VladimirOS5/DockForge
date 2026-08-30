@@ -1,30 +1,35 @@
 #pragma once
+#include <string>
+#include <vector>
+#include <wrl/client.h>
 #include <d2d1.h>
 #include <wincodec.h>
-#include <wrl/client.h>
-#include <vector>
-#include <string>
 #include "TextureAtlas.h"
 
 struct LoadedIcon {
-    std::vector<Microsoft::WRL::ComPtr<ID2D1Bitmap>> frames;
-    int frameCount = 1;
-    int frameDuration = 100;
+    Microsoft::WRL::ComPtr<ID2D1Bitmap> bitmap;
     int width = 0;
     int height = 0;
-    bool isAnimated = false;
+    int frameCount = 1;
+    int currentFrame = 0;
+    int frameDelayMs = 100;
+    std::vector<Microsoft::WRL::ComPtr<ID2D1Bitmap>> frames;
 };
 
 class IconLoader {
 public:
-    IconLoader();
-    bool Initialize(ID2D1RenderTarget* rt);
+    IconLoader(ID2D1RenderTarget* renderTarget);
+    ~IconLoader();
+    bool Initialize();
     void Shutdown();
-    LoadedIcon LoadSystemIcon(const std::wstring& exePath, int size);
+    LoadedIcon LoadSystemIcon(const std::wstring& iconPath, int size);
     LoadedIcon LoadFileIcon(const std::wstring& filePath, int size);
     LoadedIcon LoadUWPAppIcon(const std::wstring& appUserModelId, int size);
-    bool ExtractIconFrames(const std::wstring& path, int size, LoadedIcon& out);
+    LoadedIcon LoadFromHICON(HICON hIcon, int size);
+    std::vector<LoadedIcon> ExtractIconFrames(const std::wstring& filePath);
+    void SetRenderTarget(ID2D1RenderTarget* renderTarget);
 private:
-    ID2D1RenderTarget* m_renderTarget = nullptr;
     Microsoft::WRL::ComPtr<IWICImagingFactory> m_wicFactory;
+    ID2D1RenderTarget* m_renderTarget = nullptr;
+    LoadedIcon HIconToLoadedIcon(HICON hIcon, int size);
 };

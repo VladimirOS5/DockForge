@@ -1,5 +1,4 @@
 #include "Application.h"
-#include "MainWindow.h"
 #include "../Utils/Logger.h"
 #include "../Utils/Config.h"
 #include "../Utils/Theme.h"
@@ -19,6 +18,7 @@
 #include <shlobj.h>
 #include <shellapi.h>
 #include <filesystem>
+#include <thread>
 
 Application::Application() = default;
 Application::~Application() = default;

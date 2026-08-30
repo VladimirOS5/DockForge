@@ -1,65 +1,39 @@
 #include "PerformanceProfile.h"
-#include "Config.h"
 #include "Logger.h"
+#include <windows.h>
 
 PerformanceProfileManager& PerformanceProfileManager::Instance() {
-    static PerformanceProfileManager instance;
-    return instance;
+    static PerformanceProfileManager inst;
+    return inst;
 }
 
 void PerformanceProfileManager::SetProfile(PerformanceProfile profile) {
     m_profile = profile;
-    auto& cfg = Config::Instance().GetMutable();
-    switch (profile) {
-        case PerformanceProfile::Eco:
-            cfg.targetFPS = 30;
-            cfg.vsync = false;
-            cfg.adaptiveFPS = true;
-            cfg.idleFPS = 5;
-            cfg.fullscreenFPS = 1;
-            cfg.backgroundEffect = "solid";
-            cfg.jumpAnimation = false;
-            cfg.genieEffect = false;
-            cfg.badgePulse = false;
-            cfg.thumbnailPreviews = false;
-            cfg.runningIndicatorPulse = false;
-            cfg.showFPS = false;
-            break;
-        case PerformanceProfile::Balanced:
-            cfg.targetFPS = 60;
-            cfg.vsync = true;
-            cfg.adaptiveFPS = true;
-            cfg.idleFPS = 10;
-            cfg.fullscreenFPS = 1;
-            cfg.backgroundEffect = "acrylic";
-            cfg.jumpAnimation = true;
-            cfg.genieEffect = true;
-            cfg.badgePulse = true;
-            cfg.thumbnailPreviews = true;
-            cfg.runningIndicatorPulse = true;
-            break;
-        case PerformanceProfile::Performance:
-            cfg.targetFPS = 144;
-            cfg.vsync = true;
-            cfg.adaptiveFPS = false;
-            cfg.idleFPS = 30;
-            cfg.fullscreenFPS = 10;
-            cfg.backgroundEffect = "liquidglass";
-            cfg.jumpAnimation = true;
-            cfg.genieEffect = true;
-            cfg.badgePulse = true;
-            cfg.thumbnailPreviews = true;
-            cfg.runningIndicatorPulse = true;
-            break;
-        case PerformanceProfile::Custom:
-            break;
-    }
-    Config::Instance().SaveToFile();
-    LOG_INFO("Performance profile set");
+    LOG_INFO("Performance profile set to: " + std::to_string(static_cast<int>(profile)));
 }
 
 void PerformanceProfileManager::AutoDetect() {
-    SetProfile(PerformanceProfile::Balanced);
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    MEMORYSTATUSEX ms;
+    ms.dwLength = sizeof(ms);
+    GlobalMemoryStatusEx(&ms);
+    if (ms.ullTotalPhys < 4ULL * 1024 * 1024 * 1024) {
+        SetProfile(PerformanceProfile::PowerSaver);
+    } else if (ms.ullTotalPhys < 8ULL * 1024 * 1024 * 1024) {
+        SetProfile(PerformanceProfile::Balanced);
+    } else {
+        SetProfile(PerformanceProfile::Performance);
+    }
+}
+
+bool PerformanceProfileManager::IsSystemIdle() const {
+    LASTINPUTINFO lii = { sizeof(LASTINPUTINFO) };
+    if (GetLastInputInfo(&lii)) {
+        DWORD idle = GetTickCount() - lii.dwTime;
+        return idle > IDLE_THRESHOLD_MS;
+    }
+    return false;
 }
 
 bool PerformanceProfileManager::IsFullscreenAppRunning() const {
@@ -68,37 +42,52 @@ bool PerformanceProfileManager::IsFullscreenAppRunning() const {
     RECT rcWindow, rcMonitor;
     GetWindowRect(fg, &rcWindow);
     HMONITOR hMon = MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO mi = { sizeof(mi) };
-    if (!GetMonitorInfo(hMon, &mi)) return false;
-    rcMonitor = mi.rcMonitor;
-    return (rcWindow.left <= rcMonitor.left && rcWindow.top <= rcMonitor.top &&
-            rcWindow.right >= rcMonitor.right && rcWindow.bottom >= rcMonitor.bottom);
-}
-
-bool PerformanceProfileManager::IsSystemIdle() const {
-    LASTINPUTINFO lii = { sizeof(lii) };
-    if (GetLastInputInfo(&lii)) {
-        DWORD idle = GetTickCount() - lii.dwTime;
-        return idle > IDLE_THRESHOLD_MS;
+    MONITORINFO mi = { sizeof(MONITORINFO) };
+    if (GetMonitorInfo(hMon, &mi)) {
+        rcMonitor = mi.rcMonitor;
+        return (rcWindow.left == rcMonitor.left && rcWindow.top == rcMonitor.top &&
+                rcWindow.right == rcMonitor.right && rcWindow.bottom == rcMonitor.bottom);
     }
     return false;
 }
 
-void PerformanceProfileManager::Update(float deltaTime) {
-    bool wasPaused = m_paused;
-    m_fullscreen = IsFullscreenAppRunning();
-    m_idle = IsSystemIdle();
-    m_paused = m_fullscreen || m_idle;
-    
-    if (wasPaused != m_paused) {
-        LOG_INFO(m_paused ? "Rendering paused" : "Rendering resumed");
-    }
+bool PerformanceProfileManager::ShouldReduceEffects() const {
+    return m_profile == PerformanceProfile::PowerSaver || m_fullscreen || m_idle;
 }
 
 bool PerformanceProfileManager::ShouldPauseRendering() const {
     return m_paused;
 }
 
-bool PerformanceProfileManager::ShouldReduceEffects() const {
-    return m_profile == PerformanceProfile::Eco || m_fullscreen;
+int PerformanceProfileManager::GetTargetFPS() const {
+    switch (m_profile) {
+        case PerformanceProfile::PowerSaver: return 30;
+        case PerformanceProfile::Balanced: return 60;
+        case PerformanceProfile::Performance: return 120;
+        case PerformanceProfile::Ultra: return 240;
+        case PerformanceProfile::Adaptive: return m_idle ? 30 : 60;
+    }
+    return 60;
+}
+
+void PerformanceProfileManager::Update(float deltaTime) {
+    m_fullscreen = IsFullscreenAppRunning();
+    m_idle = IsSystemIdle();
+    bool shouldPause = m_fullscreen || m_idle;
+    if (shouldPause != m_paused) {
+        m_paused = shouldPause;
+        LOG_INFO("Rendering " + std::string(m_paused ? "paused" : "resumed"));
+    }
+}
+
+void PerformanceProfileManager::EnterSafeMode() {
+    m_safeMode = true;
+    SetProfile(PerformanceProfile::PowerSaver);
+    LOG_INFO("Entered safe mode");
+}
+
+void PerformanceProfileManager::ExitSafeMode() {
+    m_safeMode = false;
+    AutoDetect();
+    LOG_INFO("Exited safe mode");
 }

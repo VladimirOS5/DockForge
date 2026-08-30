@@ -1,0 +1,3 @@
+LoadedIcon IconLoader::LoadFromHICON(HICON hIcon, int size) {
+    return HIconToLoadedIcon(hIcon, size);
+}

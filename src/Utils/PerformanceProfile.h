@@ -1,27 +1,36 @@
 #pragma once
+#include <string>
+#include <chrono>
+#include <windows.h>
 
-enum class PerformanceProfile { Eco, Balanced, Performance, Custom };
+enum class PerformanceProfile {
+    PowerSaver,
+    Balanced,
+    Performance,
+    Ultra,
+    Adaptive
+};
 
 class PerformanceProfileManager {
 public:
     static PerformanceProfileManager& Instance();
     void SetProfile(PerformanceProfile profile);
-    PerformanceProfile GetProfile() const;
+    PerformanceProfile GetProfile() const { return m_profile; }
     void AutoDetect();
     bool IsSystemIdle() const;
+    bool IsFullscreenAppRunning() const;
     bool ShouldReduceEffects() const;
-    void Update(float deltaTime);
     bool ShouldPauseRendering() const;
-    bool IsBatterySaver() const;
-    float GetTargetFPS() const;
-    void SetTargetFPS(float fps);
+    int GetTargetFPS() const;
+    void Update(float deltaTime);
+    void EnterSafeMode();
+    void ExitSafeMode();
 private:
     PerformanceProfile m_profile = PerformanceProfile::Balanced;
-    float m_targetFPS = 60.0f;
-    bool m_shouldPause = false;
-    DWORD m_lastInputTick = 0;
+    bool m_safeMode = false;
     bool m_paused = false;
     bool m_fullscreen = false;
     bool m_idle = false;
+    DWORD m_lastInputTick = 0;
     static constexpr DWORD IDLE_THRESHOLD_MS = 300000;
 };

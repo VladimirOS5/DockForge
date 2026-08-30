@@ -1,44 +1,47 @@
 #include "FrameLimiter.h"
+#include <thread>
 
-FrameLimiter::FrameLimiter() : m_targetFrameTime(1000.0f / 60.0f), m_lastFrameTime(0) {}
+FrameLimiter::FrameLimiter()
+    : m_targetFrameTime(1000.0 / 60.0)
+    , m_lastFrameTime(std::chrono::steady_clock::now())
+    , m_lastFPSUpdate(std::chrono::steady_clock::now()) {}
 
 void FrameLimiter::SetTargetFPS(int fps) {
     m_targetFPS = fps;
-    m_targetFrameTime = 1000.0 / static_cast<double>(fps);
+    m_targetFrameTime = 1000.0 / fps;
 }
 
 void FrameLimiter::BeginFrame() {
-    m_frameStart = std::chrono::high_resolution_clock::now();
+    m_frameStart = std::chrono::steady_clock::now();
 }
 
 void FrameLimiter::EndFrame() {
-    auto frameEnd = std::chrono::high_resolution_clock::now();
-    double elapsed = std::chrono::duration<double, std::milli>(frameEnd - m_frameStart).count();
-    m_lastFrameTime = elapsed;
+    auto now = std::chrono::steady_clock::now();
     m_frameCount++;
 
-    auto now = std::chrono::high_resolution_clock::now();
-    if (std::chrono::duration<float>(now - m_lastFPSUpdate).count() >= 1.0f) {
-        m_currentFPS = static_cast<float>(m_frameCount);
+    auto elapsed = std::chrono::duration<double, std::milli>(now - m_lastFPSUpdate).count();
+    if (elapsed >= 1000.0) {
+        m_currentFPS = static_cast<float>(m_frameCount * 1000.0 / elapsed);
         m_frameCount = 0;
         m_lastFPSUpdate = now;
     }
 
-    double targetMs = 1000.0 / m_targetFPS;
-    if (elapsed < targetMs) {
-        double sleepMs = targetMs - elapsed;
-        auto sleepDuration = std::chrono::milliseconds(static_cast<long long>(sleepMs));
-        std::this_thread::sleep_for(sleepDuration);
+    auto frameTime = std::chrono::duration<double, std::milli>(now - m_frameStart).count();
+    if (frameTime < m_targetFrameTime) {
+        auto sleepTime = std::chrono::milliseconds(static_cast<int>(m_targetFrameTime - frameTime));
+        std::this_thread::sleep_for(sleepTime);
     }
+    m_lastFrameTime = now;
 }
 
 bool FrameLimiter::ShouldSkipFrame() {
     if (!m_adaptive) return false;
-    auto now = std::chrono::high_resolution_clock::now();
-    double elapsed = std::chrono::duration<double, std::milli>(now - m_frameStart).count();
-    return elapsed < m_targetFrameTime * 0.5;
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration<double, std::milli>(now - m_frameStart).count();
+    return elapsed < m_targetFrameTime;
 }
 
 float FrameLimiter::GetFrameTimeMs() const {
-    return static_cast<float>(m_lastFrameTime);
+    auto now = std::chrono::steady_clock::now();
+    return static_cast<float>(std::chrono::duration<double, std::milli>(now - m_lastFrameTime).count());
 }

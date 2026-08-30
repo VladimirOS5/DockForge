@@ -1,0 +1,20 @@
+// Замени определения в начале файла:
+
+bool UWPHelper::IsUWPWindow(HWND hwnd) {
+    std::wstring aumid = GetUWPAppId(hwnd);
+    return !aumid.empty();
+}
+
+std::wstring UWPHelper::GetUWPAppId(HWND hwnd) {
+    Microsoft::WRL::ComPtr<IPropertyStore> propStore;
+    if (SUCCEEDED(SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&propStore)))) {
+        PROPVARIANT pv;
+        PropVariantInit(&pv);
+        if (SUCCEEDED(propStore->GetValue(PKEY_AppUserModel_ID, &pv))) {
+            std::wstring id(pv.pwszVal);
+            PropVariantClear(&pv);
+            return id;
+        }
+    }
+    return L"";
+}
