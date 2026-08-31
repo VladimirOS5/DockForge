@@ -39,6 +39,7 @@ struct UpdateProgress {
     std::string statusMessage;
     SemanticVersion targetVersion;
     std::string errorDetails;
+    int percent = 0; // For compatibility with Application.cpp
 };
 
 class OTAUpdater {

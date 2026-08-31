@@ -54,3 +54,9 @@ void ThemeManager::BuildColors() {
         m_colors.shadow = { 0.0f, 0.0f, 0.0f, 0.15f };
     }
 }
+
+void ThemeManager::Apply(const std::string& themeStr) {
+    if (themeStr == "dark") SetMode(ThemeMode::Dark);
+    else if (themeStr == "light") SetMode(ThemeMode::Light);
+    else SetMode(ThemeMode::Auto);
+}

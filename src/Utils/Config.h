@@ -71,6 +71,9 @@ struct DockConfig {
     bool useHDRAwareColors = false;
     int stabilityTestDurationHours = 72;
     float stabilityTimeScale = 60.0f;
+
+    // Theme mode (for Theme compatibility)
+    std::string theme = "auto"; // "light", "dark", "auto"
 };
 
 class Config {

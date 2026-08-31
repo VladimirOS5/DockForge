@@ -15,6 +15,13 @@ struct SemanticVersion {
     bool IsValid() const { return major >= 0 && minor >= 0 && patch >= 0; }
 };
 
+// Helper function to get version string
+namespace VersionInfo {
+    inline std::string GetVersionString() {
+        return SemanticVersion::Current().ToString();
+    }
+}
+
 struct ReleaseInfo {
     SemanticVersion version;
     std::string downloadUrl;

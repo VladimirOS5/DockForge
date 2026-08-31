@@ -8,7 +8,9 @@ enum class PerformanceProfile {
     Balanced,
     Performance,
     Ultra,
-    Adaptive
+    Adaptive,
+    Eco,      // Alias for PowerSaver
+    Custom    // For user-defined profiles
 };
 
 class PerformanceProfileManager {

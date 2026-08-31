@@ -14,6 +14,7 @@ public:
     void Log(LogLevel level, const std::string& message, const char* file, int line);
     void SetLevel(LogLevel level) { m_minLevel = level; }
     bool IsInitialized() const { return m_initialized; }
+    void Shutdown();
 
     // Chat 11: Crash dump path
     std::filesystem::path GetLogDirectory() const { return m_logPath.parent_path(); }

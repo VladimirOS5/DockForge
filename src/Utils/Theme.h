@@ -24,6 +24,9 @@ public:
     const ThemeColors& GetColors() const { return m_colors; }
     void Refresh();
     bool IsSystemDarkMode() const;
+
+    // Helper for applying theme from string
+    void Apply(const std::string& themeStr);
 private:
     ThemeManager();
     void BuildColors();
