@@ -12,6 +12,21 @@ Logger::~Logger() {
     if (m_file.is_open()) m_file.close();
 }
 
+void Logger::Initialize() {
+    // Compatibility wrapper - initialize with default paths
+    Instance().Init(std::filesystem::current_path(), "DockForge");
+}
+
+void Logger::Shutdown() {
+    Instance().m_file.close();
+    Instance().m_initialized = false;
+}
+
+void Logger::Log(LogLevel level, const std::string& message, int value) {
+    // Overload for compatibility with 3-argument calls
+    Log(level, message + " (value: " + std::to_string(value) + ")", "", 0);
+}
+
 void Logger::Init(const std::filesystem::path& logDir, const std::string& appName) {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (m_initialized) return;

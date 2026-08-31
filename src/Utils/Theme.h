@@ -1,5 +1,6 @@
 #pragma once
 #include <d2d1.h>
+#include <string>
 
 enum class ThemeMode { Light, Dark, Auto };
 
@@ -16,20 +17,21 @@ struct ThemeColors {
     D2D1_COLOR_F shadow;
 };
 
-class ThemeManager {
+class Theme {
 public:
-    static ThemeManager& Instance();
+    static Theme& Instance();
     void SetMode(ThemeMode mode);
     ThemeMode GetMode() const { return m_mode; }
     const ThemeColors& GetColors() const { return m_colors; }
     void Refresh();
     bool IsSystemDarkMode() const;
-
-    // Helper for applying theme from string
     void Apply(const std::string& themeStr);
 private:
-    ThemeManager();
+    Theme();
     void BuildColors();
     ThemeMode m_mode = ThemeMode::Auto;
     ThemeColors m_colors;
 };
+
+// Alias for compatibility
+using ThemeManager = Theme;

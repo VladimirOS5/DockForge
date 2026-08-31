@@ -48,7 +48,7 @@ bool Application::Initialize(HINSTANCE hInstance) {
     WindowManager::Instance().Initialize();
     TrayIconManager::Instance().Initialize(hInstance);
     SettingsWindow::Instance().Create(hInstance);
-    PluginManager::Instance().Initialize();
+    PluginManager::Instance().Initialize(nullptr, nullptr, nullptr);
     InitializeOTA();
 
     LogSystemInfo();

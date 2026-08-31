@@ -10,8 +10,11 @@ enum class LogLevel { Debug, Info, Warning, Error, Fatal };
 class Logger {
 public:
     static Logger& Instance();
+    static void Initialize(); // Compatibility wrapper
+    static void Shutdown();   // Compatibility wrapper
     void Init(const std::filesystem::path& logDir, const std::string& appName);
     void Log(LogLevel level, const std::string& message, const char* file, int line);
+    void Log(LogLevel level, const std::string& message, int value); // Overload for compatibility
     void SetLevel(LogLevel level) { m_minLevel = level; }
     bool IsInitialized() const { return m_initialized; }
     void Shutdown();
