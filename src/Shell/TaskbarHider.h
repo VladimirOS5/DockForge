@@ -7,6 +7,7 @@ public:
     ~TaskbarHider();
     bool Hide();
     bool Restore();
+    bool Show(); // Alias for Restore() for compatibility
     bool IsHidden() const { return m_hidden; }
 private:
     bool GetTaskbarRect(RECT& rect);

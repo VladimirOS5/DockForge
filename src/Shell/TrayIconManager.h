@@ -16,7 +16,7 @@ struct TrayIconInfo {
 class TrayIconManager {
 public:
     static TrayIconManager& Instance();
-    void Initialize();
+    void Initialize(HINSTANCE hInstance = nullptr);  // Optional owner for compatibility
     void Shutdown();
     void Refresh();
     std::vector<TrayIconInfo> GetIcons() const;

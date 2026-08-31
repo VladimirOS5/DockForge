@@ -7,7 +7,8 @@ TrayIconManager& TrayIconManager::Instance() {
     return instance;
 }
 
-void TrayIconManager::Initialize() {
+void TrayIconManager::Initialize(HINSTANCE hInstance) {
+    (void)hInstance;  // Optional parameter for compatibility
     Refresh();
     m_timerId = SetTimer(nullptr, 0, 2000, TimerProc);
     LOG_INFO("TrayIconManager initialized with " + std::to_string(m_icons.size()) + " icons");

@@ -9,6 +9,12 @@ PluginManager& PluginManager::Instance() {
 }
 
 void PluginManager::Initialize(ID2D1RenderTarget* rt, IDWriteFactory* wf, HWND dockHwnd) {
+    // Compatibility: allow calling with no arguments
+    if (!rt || !wf || !dockHwnd) {
+        LOG_INFO("PluginManager initialized (deferred)");
+        return;
+    }
+    
     m_context.renderTarget = rt;
     m_context.writeFactory = wf;
     m_context.dockHwnd = dockHwnd;

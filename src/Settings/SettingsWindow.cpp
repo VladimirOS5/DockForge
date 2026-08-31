@@ -338,10 +338,10 @@ void SettingsWindow::ApplyControlValue(SettingControl& c) {
     } else if (c.id == "perfProfile") {
         std::string profiles[] = { "eco", "balanced", "performance", "custom" };
         cfg.performanceProfile = profiles[c.selectedIndex];
-        if (c.selectedIndex == 0) PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Eco);
+        if (c.selectedIndex == 0) PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::PowerSaver);
         else if (c.selectedIndex == 1) PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Balanced);
         else if (c.selectedIndex == 2) PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Performance);
-        else PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Custom);
+        else PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Adaptive);
     } else if (c.id == "multiMonitor") {
         cfg.multiMonitorMode = (c.selectedIndex == 1) ? "all" : "primary";
     }

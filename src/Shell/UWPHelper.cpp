@@ -5,6 +5,10 @@
 #include <shobjidl_core.h>
 #include <propkey.h>
 #include <shobjidl.h>
+#include <shlwapi.h>
+
+#pragma comment(lib, "shlwapi.lib")
+#pragma comment(lib, "propsys.lib")
 
 bool UWPHelper::IsUWPApp(HWND hwnd) {
     std::wstring aumid = GetAppUserModelId(hwnd);

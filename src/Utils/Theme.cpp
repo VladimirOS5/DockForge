@@ -1,14 +1,14 @@
 #include "Theme.h"
 #include <windows.h>
 
-ThemeManager& ThemeManager::Instance() {
-    static ThemeManager instance;
+Theme& Theme::Instance() {
+    static Theme instance;
     return instance;
 }
 
-ThemeManager::ThemeManager() { BuildColors(); }
+Theme::Theme() { BuildColors(); }
 
-bool ThemeManager::IsSystemDarkMode() const {
+bool Theme::IsSystemDarkMode() const {
     HKEY hKey;
     DWORD value = 1;
     DWORD size = sizeof(DWORD);
@@ -19,16 +19,16 @@ bool ThemeManager::IsSystemDarkMode() const {
     return value == 0;
 }
 
-void ThemeManager::SetMode(ThemeMode mode) {
+void Theme::SetMode(ThemeMode mode) {
     m_mode = mode;
     BuildColors();
 }
 
-void ThemeManager::Refresh() {
+void Theme::Refresh() {
     if (m_mode == ThemeMode::Auto) BuildColors();
 }
 
-void ThemeManager::BuildColors() {
+void Theme::BuildColors() {
     bool dark = (m_mode == ThemeMode::Dark) || (m_mode == ThemeMode::Auto && IsSystemDarkMode());
     if (dark) {
         m_colors.background = { 0.08f, 0.08f, 0.09f, 1.0f };
@@ -53,4 +53,10 @@ void ThemeManager::BuildColors() {
         m_colors.controlBgHover = { 0.85f, 0.85f, 0.88f, 1.0f };
         m_colors.shadow = { 0.0f, 0.0f, 0.0f, 0.15f };
     }
+}
+
+void Theme::Apply(const std::string& themeStr) {
+    if (themeStr == "dark") SetMode(ThemeMode::Dark);
+    else if (themeStr == "light") SetMode(ThemeMode::Light);
+    else SetMode(ThemeMode::Auto);
 }
