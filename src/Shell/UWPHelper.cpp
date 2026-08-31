@@ -1,47 +1,41 @@
 #include "UWPHelper.h"
-#include "../Utils/Logger.h"
-#include <wrl/client.h>
-#include <propsys.h>
+#include <windows.h>
 #include <shobjidl_core.h>
-#include <propkey.h>
-#include <shobjidl.h>
+#include <propsys.h>
+#include <appmodel.h>
 
-bool UWPHelper::IsUWPApp(HWND hwnd) {
+bool UWPHelper::IsUWPWindow(HWND hwnd) {
     std::wstring aumid = GetAppUserModelId(hwnd);
-    return !aumid.empty();
+    return !aumid.empty() && aumid.find(L"!") != std::wstring::npos;
+}
+
+std::wstring UWPHelper::GetUWPAppId(HWND hwnd) {
+    return GetAppUserModelId(hwnd);
 }
 
 std::wstring UWPHelper::GetAppUserModelId(HWND hwnd) {
-    Microsoft::WRL::ComPtr<IPropertyStore> propStore;
-    HRESULT hr = SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&propStore));
-    if (FAILED(hr)) return L"";
-    PROPVARIANT pv;
-    PropVariantInit(&pv);
-    hr = propStore->GetValue(PKEY_AppUserModel_ID, &pv);
+    IPropertyStore* ps = nullptr;
     std::wstring result;
-    if (SUCCEEDED(hr) && pv.vt == VT_LPWSTR) {
-        result = pv.pwszVal;
+    if (SUCCEEDED(SHGetPropertyStoreForWindow(hwnd, IID_PPV_ARGS(&ps)))) {
+        PROPVARIANT pv; PropVariantInit(&pv);
+        if (SUCCEEDED(ps->GetValue(PKEY_AppUserModel_ID, &pv))) {
+            if (pv.vt == VT_LPWSTR) result = pv.pwszVal;
+            PropVariantClear(&pv);
+        }
+        ps->Release();
     }
-    PropVariantClear(&pv);
     return result;
 }
 
 std::wstring UWPHelper::GetPackageFamilyName(const std::wstring& aumid) {
     size_t pos = aumid.find(L'!');
-    if (pos != std::wstring::npos) {
-        return aumid.substr(0, pos);
-    }
-    return aumid;
+    return (pos != std::wstring::npos) ? aumid.substr(0, pos) : L"";
 }
 
 std::wstring UWPHelper::GetDisplayNameFromAUMID(const std::wstring& aumid) {
-    Microsoft::WRL::ComPtr<IApplicationActivationManager> activator;
-    HRESULT hr = CoCreateInstance(CLSID_ApplicationActivationManager, nullptr,
-        CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&activator));
-    if (FAILED(hr)) return L"";
-    return L"";
+    (void)aumid; return L"";
 }
 
 std::wstring UWPHelper::GetPackagePath(const std::wstring& packageFamilyName) {
-    return L"";
+    (void)packageFamilyName; return L"";
 }

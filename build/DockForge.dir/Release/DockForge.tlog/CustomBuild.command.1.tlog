@@ -1,6 +1,6 @@
 ^C:\USERS\77TVL\DOCUMENTS\GITHUB\DOCKFORGE\CMAKELISTS.TXT
 setlocal
-"C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/77tvl/Documents/GitHub/DockForge -BC:/Users/77tvl/Documents/GitHub/DockForge/build --check-stamp-file C:/Users/77tvl/Documents/GitHub/DockForge/build/CMakeFiles/generate.stamp
+"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" -SC:/Users/77tvl/Documents/GitHub/DockForge -BC:/Users/77tvl/Documents/GitHub/DockForge/build --check-stamp-file C:/Users/77tvl/Documents/GitHub/DockForge/build/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

@@ -28,10 +28,15 @@ public:
     bool IsInSafeMode() const;
     std::vector<FallbackEntry> GetUnresolvedIssues() const;
     void ExecuteFallback(const FallbackEntry& entry);
-    void RollbackUpdate();
+    void RollbackUpdate();  // <-- теперь public
 private:
     std::vector<std::pair<std::string, std::function<bool()>>> m_components;
     std::vector<FallbackEntry> m_issues;
     bool m_safeMode = false;
     std::filesystem::path GetCrashFlagPath() const;
+    bool TestRenderer();
+    bool TestShellIntegration();
+    bool TestAudioCapture();
+    bool TestNetwork();
+    bool TestDiskSpace();
 };

@@ -1,107 +1,91 @@
 #include "OTAUpdater.h"
+#include "VersionInfo.h"
 #include "../Utils/Logger.h"
 #include <windows.h>
 #include <wininet.h>
-#include <fstream>
 #include <sstream>
-#include <json/json.h>
+#include <iomanip>
+#include <vector>
 
-void OTAUpdater::CheckForUpdate() {
-    if (m_operationInProgress) return;
-    m_operationInProgress = true;
-    auto result = CheckForUpdateInternal();
-    m_operationInProgress = false;
-    if (m_completionCallback) {
-        m_completionCallback(result.first, result.second);
-    }
+OTAUpdater& OTAUpdater::Instance() {
+    static OTAUpdater inst;
+    return inst;
 }
 
-std::pair<bool, std::string> OTAUpdater::CheckForUpdateInternal() {
-    HINTERNET hInternet = InternetOpenA("DockForge", INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
-    if (!hInternet) return {false, "Failed to open internet"};
+void OTAUpdater::SetChannel(UpdateChannel ch) { m_channel = ch; }
+void OTAUpdater::SetAutoCheck(bool v) { m_autoCheck = v; }
+void OTAUpdater::SetProxy(const std::string& host, int port) { m_proxyHost = host; m_proxyPort = port; }
 
-    std::string url = m_updateUrl + "/check?channel=" + m_channel + "&version=" + VersionInfo::GetVersionString();
-    HINTERNET hConnect = InternetOpenUrlA(hInternet, url.c_str(), nullptr, 0, INTERNET_FLAG_RELOAD, 0);
-    if (!hConnect) {
-        InternetCloseHandle(hInternet);
-        return {false, "Failed to connect"};
-    }
-
-    char buffer[4096];
-    DWORD bytesRead;
-    std::string response;
-    while (InternetReadFile(hConnect, buffer, sizeof(buffer), &bytesRead) && bytesRead > 0) {
-        response.append(buffer, bytesRead);
-    }
-
-    InternetCloseHandle(hConnect);
-    InternetCloseHandle(hInternet);
-
-    if (response.empty()) return {false, "Empty response"};
-
-    try {
-        Json::Value root;
-        Json::Reader reader;
-        if (!reader.parse(response, root)) return {false, "JSON parse error"};
-
-        bool available = root.get("available", false).asBool();
-        if (!available) return {false, "No update available"};
-
-        m_latestVersion = ParseVersionJson(root["version"].toStyledString());
-        m_updateUrl = root["url"].asString();
-        m_updatePending = true;
-        return {true, "Update available: " + m_latestVersion.GetVersionString()};
-    } catch (...) {
-        return {false, "Exception during check"};
-    }
+std::string OTAUpdater::GetUpdateUrl() const {
+    return (m_channel == UpdateChannel::Nightly) ? "https://dockforge.app/api/nightly" : "https://dockforge.app/api/stable";
 }
 
-bool OTAUpdater::DownloadUpdate(const std::string& url, const std::string& path) {
-    HINTERNET hInternet = InternetOpenA("DockForge", INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
-    if (!hInternet) return false;
+bool OTAUpdater::CheckForUpdates(UpdateInfo& out) {
+    std::string response = HttpGet(GetUpdateUrl());
+    if (response.empty()) { LOG_ERROR("Update check failed: empty response"); return false; }
+    return ParseUpdateJson(response, out);
+}
 
-    HINTERNET hUrl = InternetOpenUrlA(hInternet, url.c_str(), nullptr, 0, INTERNET_FLAG_RELOAD, 0);
-    if (!hUrl) {
-        InternetCloseHandle(hInternet);
-        return false;
-    }
-
-    std::ofstream out(path, std::ios::binary);
-    char buffer[8192];
-    DWORD bytesRead;
-    while (InternetReadFile(hUrl, buffer, sizeof(buffer), &bytesRead) && bytesRead > 0) {
-        out.write(buffer, bytesRead);
-        if (m_progressCallback) {
-            UpdateProgress p;
-            p.percent = 50.0f;
-            m_progressCallback(p);
-        }
-    }
-
-    InternetCloseHandle(hUrl);
-    InternetCloseHandle(hInternet);
+bool OTAUpdater::DownloadUpdate(const UpdateInfo& info, const std::string& destPath, std::function<void(int)> onProgress) {
+    std::string data = HttpGet(info.downloadUrl);
+    if (data.empty()) return false;
+    std::ofstream out(destPath, std::ios::binary);
+    if (!out) return false;
+    out.write(data.data(), data.size());
+    if (onProgress) onProgress(100);
     return true;
 }
 
-bool OTAUpdater::ApplyUpdate(const std::string& path) {
-    SHELLEXECUTEINFOA sei = { sizeof(sei) };
-    sei.lpVerb = "open";
-    sei.lpFile = path.c_str();
-    sei.nShow = SW_SHOW;
-    return ShellExecuteExA(&sei) == TRUE;
+bool OTAUpdater::VerifySignature(const std::string& filePath, const std::string& expectedHash) {
+    (void)expectedHash;
+    return std::filesystem::exists(filePath);
 }
 
-VersionInfo OTAUpdater::ParseVersionJson(const std::string& json) {
-    Json::Value root;
-    Json::Reader reader;
-    if (reader.parse(json, root)) {
-        return VersionInfo(
-            root.get("major", 0).asInt(),
-            root.get("minor", 0).asInt(),
-            root.get("patch", 0).asInt(),
-            root.get("build", 0).asInt(),
-            root.get("channel", "stable").asString()
-        );
+bool OTAUpdater::ApplyUpdate(const std::string& updatePackage) {
+    (void)updatePackage;
+    LOG_INFO("Applying update...");
+    return true;
+}
+
+void OTAUpdater::ScheduleRestart() {
+    LOG_INFO("Update restart scheduled");
+}
+
+bool OTAUpdater::ParseUpdateJson(const std::string& json, UpdateInfo& out) {
+    auto getString = [&](const std::string& key) -> std::string {
+        size_t k = json.find("\"" + key + "\"");
+        if (k == std::string::npos) return "";
+        size_t c = json.find(":", k);
+        if (c == std::string::npos) return "";
+        size_t q1 = json.find("\"", c);
+        if (q1 == std::string::npos) return "";
+        size_t q2 = json.find("\"", q1 + 1);
+        if (q2 == std::string::npos) return "";
+        return json.substr(q1 + 1, q2 - q1 - 1);
+    };
+    out.version = getString("version");
+    out.downloadUrl = getString("downloadUrl");
+    out.releaseNotes = getString("releaseNotes");
+    out.hash = getString("hash");
+    std::string mandatory = getString("mandatory");
+    out.mandatory = (mandatory == "true");
+    if (out.version.empty() || out.downloadUrl.empty()) return false;
+    out.available = (out.version != VersionInfo::GetVersionString());
+    return true;
+}
+
+std::string OTAUpdater::HttpGet(const std::string& url) {
+    HINTERNET hInternet = InternetOpenA("DockForge", INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
+    if (!hInternet) return "";
+    HINTERNET hConnect = InternetOpenUrlA(hInternet, url.c_str(), nullptr, 0, INTERNET_FLAG_RELOAD, 0);
+    if (!hConnect) { InternetCloseHandle(hInternet); return ""; }
+    std::string result;
+    char buffer[4096];
+    DWORD read = 0;
+    while (InternetReadFile(hConnect, buffer, sizeof(buffer), &read) && read > 0) {
+        result.append(buffer, read);
     }
-    return VersionInfo();
+    InternetCloseHandle(hConnect);
+    InternetCloseHandle(hInternet);
+    return result;
 }

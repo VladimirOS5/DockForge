@@ -7,6 +7,7 @@ public:
     FrameLimiter();
     void SetTargetFPS(int fps);
     void SetAdaptive(bool adaptive) { m_adaptive = adaptive; }
+    void SetVSync(bool enabled) { m_vsync = enabled; }
     void BeginFrame();
     void EndFrame();
     bool ShouldSkipFrame();
@@ -16,6 +17,7 @@ private:
     int m_targetFPS = 60;
     double m_targetFrameTime = 16.666;
     bool m_adaptive = false;
+    bool m_vsync = true;
     std::chrono::steady_clock::time_point m_frameStart;
     std::chrono::steady_clock::time_point m_lastFrameTime;
     std::chrono::steady_clock::time_point m_lastFPSUpdate;
