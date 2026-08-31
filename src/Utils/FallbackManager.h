@@ -28,6 +28,7 @@ public:
     bool IsInSafeMode() const;
     std::vector<FallbackEntry> GetUnresolvedIssues() const;
     void ExecuteFallback(const FallbackEntry& entry);
+    void RollbackUpdate();
 private:
     std::vector<std::pair<std::string, std::function<bool()>>> m_components;
     std::vector<FallbackEntry> m_issues;

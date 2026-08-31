@@ -1,8 +1,8 @@
 #include "FallbackManager.h"
 #include "Logger.h"
 #include <fstream>
-#include <wininet.h>
 #include <windows.h>
+#include <wininet.h>
 
 FallbackManager& FallbackManager::Instance() {
     static FallbackManager inst;
@@ -92,6 +92,11 @@ void FallbackManager::ExecuteFallback(const FallbackEntry& entry) {
         case FallbackAction::FullRestart: break;
         case FallbackAction::SafeMode: EnterSafeMode(); break;
     }
+}
+
+void FallbackManager::RollbackUpdate() {
+    LOG_INFO("Rolling back update...");
+    // TODO: Implement actual rollback logic (restore from backup)
 }
 
 std::filesystem::path FallbackManager::GetCrashFlagPath() const {
