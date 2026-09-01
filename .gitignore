@@ -7,17 +7,15 @@
 *.so
 *.a
 *.out
-build/
-dist/
-target/
 
 # Dependencies
 node_modules/
 venv/
 .venv/
 __pycache__/
-.mypy_cache/
-.pytest_cache/
+dist/
+build/
+target/
 .gradle/
 
 # Logs and temp files
@@ -34,11 +32,7 @@ __pycache__/
 .vscode/
 .idea/
 
-# System files
-.DS_Store
-Thumbs.db
-
-# Coverage reports
+# Coverage
 coverage/
 htmlcov/
 .coverage
