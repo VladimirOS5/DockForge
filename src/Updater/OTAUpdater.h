@@ -39,6 +39,7 @@ struct UpdateProgress {
     std::string statusMessage;
     SemanticVersion targetVersion;
     std::string errorDetails;
+    int percent = 0; // For compatibility with Application.cpp
 };
 
 class OTAUpdater {
@@ -47,13 +48,17 @@ public:
 
     // Configuration
     void SetUpdateUrl(const std::string& url) { m_updateUrl = url; }
-    void SetChannel(const std::string& channel) { m_channel = channel; } // "stable", "beta", "alpha"
+    void SetChannel(const std::string& channel); // "stable", "beta", "alpha"
     void SetAutoCheckInterval(int minutes) { m_checkIntervalMinutes = minutes; }
     void SetAutoDownload(bool enabled) { m_autoDownload = enabled; }
     void SetAutoInstall(bool enabled) { m_autoInstall = enabled; }
 
+    // Additional setters for compatibility
+    void SetAutoCheck(bool enabled) { m_autoCheck = enabled; }
+    void SetProxy(const std::string& host, int port) { m_proxyHost = host; m_proxyPort = port; }
+
     // Actions
-    void CheckForUpdateAsync();
+    void CheckForUpdatesAsync();
     void DownloadUpdateAsync();
     void InstallUpdate();
     void RollbackUpdate();
@@ -89,15 +94,21 @@ private:
     void NotifyProgress();
 
     std::string BuildUpdateUrl() const;
+    std::string GetUpdateUrl() const;
     bool ParseReleaseJson(const std::string& json, ReleaseInfo& out);
-    bool DownloadFile(const std::string& url, const std::filesystem::path& dest, 
+    bool DownloadFile(const std::string& url, const std::filesystem::path& dest,
                       std::atomic<bool>& cancel, float& progress);
+    bool HttpGet(const std::string& url, std::string& response);
+    bool ParseUpdateJson(const std::string& json, ReleaseInfo& out);
 
     std::string m_updateUrl = "https://api.dockforge.app/v1/releases";
     std::string m_channel = "stable";
     int m_checkIntervalMinutes = 60;
     bool m_autoDownload = true;
     bool m_autoInstall = false;
+    bool m_autoCheck = true;
+    std::string m_proxyHost;
+    int m_proxyPort = 0;
 
     UpdateProgress m_progress;
     ReleaseInfo m_pendingRelease;

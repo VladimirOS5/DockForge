@@ -1,12 +1,10 @@
 #include "SettingsWindow.h"
 #include "../Utils/Config.h"
+#include "../Utils/Theme.h"
 #include "../Utils/PerformanceProfile.h"
 #include "../Utils/Logger.h"
 #include <windowsx.h>
 #include <cmath>
-
-SettingsWindow::SettingsWindow() = default;
-SettingsWindow::~SettingsWindow() = default;
 
 SettingsWindow& SettingsWindow::Instance() {
     static SettingsWindow instance;
@@ -40,34 +38,30 @@ bool SettingsWindow::Create(HINSTANCE hInstance) {
 }
 
 void SettingsWindow::BuildLayout() {
-    m_controls.clear(); m_categories.clear();
-    m_categories.push_back({"General", {}});
-    m_categories.push_back({"Appearance", {}});
-    m_categories.push_back({"Animation", {}});
-    m_categories.push_back({"Performance", {}});
-    m_categories.push_back({"About", {}});
-
+    m_controls.clear();
     float y = PADDING;
     float x = TAB_WIDTH + PADDING;
     float w = WIN_WIDTH - TAB_WIDTH - PADDING * 2;
     float h = 32;
 
     auto add = [&](int cat, const std::string& id, const std::string& label, ControlType type) -> SettingControl& {
-        SettingControl c;
-        c.category = cat; c.id = id; c.label = label; c.type = type;
-        c.x = x; c.y = y; c.w = static_cast<int>(w); c.h = static_cast<int>(h);
+        SettingControl c; c.category = cat; c.id = id; c.label = label; c.type = type;
+        c.x = x; c.y = y; c.w = w; c.h = h;
         m_controls.push_back(c);
         y += ROW_H;
         return m_controls.back();
     };
 
+    // General
     add(0, "showStartButton", "Show Start Button", ControlType::Toggle).boolValue = Config::Instance().Get().showStartButton;
     add(0, "showTrayIcons", "Show Tray Icons", ControlType::Toggle).boolValue = Config::Instance().Get().showTrayIcons;
     add(0, "showFPS", "Show FPS Counter", ControlType::Toggle).boolValue = Config::Instance().Get().showFPS;
+    add(0, "sep1", "", ControlType::Separator);
     add(0, "jumpLists", "Enable Jump Lists", ControlType::Toggle).boolValue = Config::Instance().Get().jumpLists;
     add(0, "thumbnailPreviews", "Thumbnail Previews", ControlType::Toggle).boolValue = Config::Instance().Get().thumbnailPreviews;
 
     y = PADDING;
+    // Appearance
     auto& theme = add(1, "theme", "Theme", ControlType::Dropdown);
     theme.options = { "Auto", "Light", "Dark" };
     theme.selectedIndex = (ThemeManager::Instance().GetMode() == ThemeMode::Light) ? 1 : (ThemeManager::Instance().GetMode() == ThemeMode::Dark) ? 2 : 0;
@@ -79,6 +73,7 @@ void SettingsWindow::BuildLayout() {
     skin.selectedIndex = (Config::Instance().Get().startButtonSkin == "classic") ? 1 : (Config::Instance().Get().startButtonSkin == "modern") ? 2 : 0;
 
     y = PADDING;
+    // Animation
     add(2, "animSpeed", "Animation Speed", ControlType::Slider).value = Config::Instance().Get().animationSpeed;
     m_controls.back().min = 0.1f; m_controls.back().max = 3.0f; m_controls.back().step = 0.1f;
     add(2, "magScale", "Magnification Scale", ControlType::Slider).value = Config::Instance().Get().magnificationScale;
@@ -88,6 +83,7 @@ void SettingsWindow::BuildLayout() {
     add(2, "badgePulse", "Badge Pulse", ControlType::Toggle).boolValue = Config::Instance().Get().badgePulse;
 
     y = PADDING;
+    // Performance (Chat 09)
     auto& profile = add(3, "perfProfile", "Performance Profile", ControlType::Dropdown);
     profile.options = { "Eco", "Balanced", "Performance", "Custom" };
     std::string p = Config::Instance().Get().performanceProfile;
@@ -103,12 +99,15 @@ void SettingsWindow::BuildLayout() {
     add(3, "adaptive", "Adaptive FPS", ControlType::Toggle).boolValue = Config::Instance().Get().adaptiveFPS;
 
     y = PADDING;
+    // About
     add(4, "about", "DockForge v1.0.0-alpha", ControlType::Label);
     add(4, "exportTheme", "Export Theme...", ControlType::Button).onClick = []() {
-        Config::Instance().ExportTheme("DockForge_Theme.json"); LOG_INFO("Theme exported");
+        Config::Instance().ExportTheme("DockForge_Theme.json");
+        LOG_INFO("Theme exported");
     };
     add(4, "importTheme", "Import Theme...", ControlType::Button).onClick = []() {
-        Config::Instance().ImportTheme("DockForge_Theme.json"); LOG_INFO("Theme imported");
+        Config::Instance().ImportTheme("DockForge_Theme.json");
+        LOG_INFO("Theme imported");
     };
 }
 
@@ -130,7 +129,8 @@ void SettingsWindow::SyncValuesFromConfig() {
         else if (c.id == "perfProfile") {
             std::string p = Config::Instance().Get().performanceProfile;
             c.selectedIndex = (p == "eco") ? 0 : (p == "balanced") ? 1 : (p == "performance") ? 2 : 3;
-        } else if (c.id == "multiMonitor") {
+        }
+        else if (c.id == "multiMonitor") {
             c.selectedIndex = (Config::Instance().Get().multiMonitorMode == "all") ? 1 : 0;
         }
     }
@@ -138,8 +138,8 @@ void SettingsWindow::SyncValuesFromConfig() {
 
 void SettingsWindow::Show() { if (m_hwnd) { ShowWindow(m_hwnd, SW_SHOW); SetForegroundWindow(m_hwnd); m_visible = true; } }
 void SettingsWindow::Hide() { if (m_hwnd) { ShowWindow(m_hwnd, SW_HIDE); m_visible = false; } }
-void SettingsWindow::Toggle() { if (m_visible) Hide(); else Show(); }
 void SettingsWindow::Destroy() { if (m_hwnd) { DestroyWindow(m_hwnd); m_hwnd = nullptr; } }
+void SettingsWindow::Toggle() { if (m_visible) Hide(); else Show(); }
 
 LRESULT CALLBACK SettingsWindow::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     if (msg == WM_CREATE) {
@@ -169,7 +169,8 @@ void SettingsWindow::OnPaint() {
     m_renderer->BeginDraw();
     auto& th = ThemeManager::Instance().GetColors();
     m_renderer->Clear(th.background.r, th.background.g, th.background.b, 1.0f);
-    DrawTabs(); DrawControls();
+    DrawTabs();
+    DrawControls();
     m_renderer->EndDraw();
 }
 
@@ -177,12 +178,15 @@ void SettingsWindow::DrawTabs() {
     auto& th = ThemeManager::Instance().GetColors();
     m_renderer->FillRect(0, 0, static_cast<float>(TAB_WIDTH), static_cast<float>(WIN_HEIGHT), th.backgroundSecondary.r, th.backgroundSecondary.g, th.backgroundSecondary.b, 1.0f);
     for (size_t i = 0; i < m_categories.size(); ++i) {
-        float y = static_cast<float>(PADDING + i * 40);
+        float y = PADDING + i * 40;
         bool active = (static_cast<int>(i) == m_activeCategory);
-        if (active) m_renderer->FillRect(4, y, static_cast<float>(TAB_WIDTH - 8), 36, th.accent.r, th.accent.g, th.accent.b, 1.0f);
-        std::wstring text(m_categories[i].name.begin(), m_categories[i].name.end());
+        if (active) {
+            m_renderer->FillRect(4, y, static_cast<float>(TAB_WIDTH - 8), 36, th.accent.r, th.accent.g, th.accent.b, 1.0f);
+        }
+        std::wstring text(m_categories[i].begin(), m_categories[i].end());
+        float tx = 20, ty = y + 10;
         float r = active ? 1.0f : th.text.r, g = active ? 1.0f : th.text.g, b = active ? 1.0f : th.text.b;
-        m_renderer->DrawTextLayout(text, 20, y + 10, r, g, b, 14.0f);
+        m_renderer->DrawTextLayout(text, tx, ty, r, g, b, 14.0f);
     }
 }
 
@@ -197,51 +201,54 @@ void SettingsWindow::DrawControls() {
             case ControlType::Button: DrawButton(c); break;
             case ControlType::Label: DrawLabel(c); break;
             case ControlType::Separator:
-                m_renderer->FillRect(c.x, c.y + 16, static_cast<float>(c.w), 1, th.border.r, th.border.g, th.border.b, 1.0f);
+                m_renderer->FillRect(c.x, c.y + 16, c.w, 1, th.border.r, th.border.g, th.border.b, 1.0f);
                 break;
         }
     }
 }
 
-void SettingsWindow::DrawToggle(const SettingControl& c) {
+void SettingsWindow::DrawToggle(SettingControl& c) {
     auto& th = ThemeManager::Instance().GetColors();
     m_renderer->DrawTextLayout(std::wstring(c.label.begin(), c.label.end()), c.x, c.y + 8, th.text.r, th.text.g, th.text.b, 13.0f);
     float sw = 44, sh = 24, sx = c.x + c.w - sw, sy = c.y + 4;
     m_renderer->DrawRoundedRect(sx, sy, sw, sh, sh / 2, th.controlBg.r, th.controlBg.g, th.controlBg.b, 1.0f);
-    if (c.boolValue) m_renderer->FillRect(sx + 2, sy + 2, sw / 2, sh - 4, th.accent.r, th.accent.g, th.accent.b, 1.0f);
-    else m_renderer->FillRect(sx + sw / 2 - 2, sy + 2, sw / 2, sh - 4, th.controlBgHover.r, th.controlBgHover.g, th.controlBgHover.b, 1.0f);
+    if (c.boolValue) {
+        m_renderer->FillRect(sx + 2, sy + 2, sw / 2, sh - 4, th.accent.r, th.accent.g, th.accent.b, 1.0f);
+    } else {
+        m_renderer->FillRect(sx + sw / 2 - 2, sy + 2, sw / 2, sh - 4, th.controlBgHover.r, th.controlBgHover.g, th.controlBgHover.b, 1.0f);
+    }
 }
 
-void SettingsWindow::DrawSlider(const SettingControl& c) {
+void SettingsWindow::DrawSlider(SettingControl& c) {
     auto& th = ThemeManager::Instance().GetColors();
     m_renderer->DrawTextLayout(std::wstring(c.label.begin(), c.label.end()), c.x, c.y + 8, th.text.r, th.text.g, th.text.b, 13.0f);
     float trackY = c.y + 20;
-    m_renderer->FillRect(c.x + 180, trackY, static_cast<float>(c.w) - 220, 4, th.controlBg.r, th.controlBg.g, th.controlBg.b, 1.0f);
+    m_renderer->FillRect(c.x + 180, trackY, c.w - 220, 4, th.controlBg.r, th.controlBg.g, th.controlBg.b, 1.0f);
     float t = (c.value - c.min) / (c.max - c.min);
-    float knobX = c.x + 180 + t * (static_cast<float>(c.w) - 220 - 16);
+    float knobX = c.x + 180 + t * (c.w - 220 - 16);
     m_renderer->FillRect(knobX, trackY - 6, 16, 16, th.accent.r, th.accent.g, th.accent.b, 1.0f);
     std::wstring val = std::to_wstring(static_cast<int>(c.value * 100)) + (c.id == "animSpeed" ? L"%" : L"");
     if (c.id == "targetFPS") val = std::to_wstring(static_cast<int>(c.value));
     m_renderer->DrawTextLayout(val, c.x + c.w - 40, c.y + 6, th.textSecondary.r, th.textSecondary.g, th.textSecondary.b, 12.0f);
 }
 
-void SettingsWindow::DrawDropdown(const SettingControl& c) {
+void SettingsWindow::DrawDropdown(SettingControl& c) {
     auto& th = ThemeManager::Instance().GetColors();
     m_renderer->DrawTextLayout(std::wstring(c.label.begin(), c.label.end()), c.x, c.y + 8, th.text.r, th.text.g, th.text.b, 13.0f);
-    float bx = c.x + 180, bw = static_cast<float>(c.w) - 200;
+    float bx = c.x + 180, bw = c.w - 200;
     m_renderer->DrawRoundedRect(bx, c.y + 2, bw, 28, 4, th.controlBg.r, th.controlBg.g, th.controlBg.b, 1.0f);
     std::string txt = c.selectedIndex < static_cast<int>(c.options.size()) ? c.options[c.selectedIndex] : "";
     m_renderer->DrawTextLayout(std::wstring(txt.begin(), txt.end()), bx + 10, c.y + 8, th.text.r, th.text.g, th.text.b, 13.0f);
 }
 
-void SettingsWindow::DrawButton(const SettingControl& c) {
+void SettingsWindow::DrawButton(SettingControl& c) {
     auto& th = ThemeManager::Instance().GetColors();
     auto bg = c.hovered ? th.accentHover : th.accent;
     m_renderer->DrawRoundedRect(c.x, c.y, 160, 36, 6, bg.r, bg.g, bg.b, 1.0f);
     m_renderer->DrawTextLayout(std::wstring(c.label.begin(), c.label.end()), c.x + 20, c.y + 10, 1.0f, 1.0f, 1.0f, 13.0f);
 }
 
-void SettingsWindow::DrawLabel(const SettingControl& c) {
+void SettingsWindow::DrawLabel(SettingControl& c) {
     auto& th = ThemeManager::Instance().GetColors();
     m_renderer->DrawTextLayout(std::wstring(c.label.begin(), c.label.end()), c.x, c.y + 8, th.textSecondary.r, th.textSecondary.g, th.textSecondary.b, 14.0f);
 }
@@ -253,7 +260,7 @@ void SettingsWindow::OnMouseMove(int x, int y) {
     if (m_dragging && m_dragControl >= 0 && m_controls[m_dragControl].type == ControlType::Slider) {
         auto& c = m_controls[m_dragControl];
         float trackX = c.x + 180;
-        float trackW = static_cast<float>(c.w) - 220;
+        float trackW = c.w - 220;
         float t = static_cast<float>(x - trackX - 8) / (trackW - 16);
         t = std::max(0.0f, std::min(1.0f, t));
         float raw = c.min + t * (c.max - c.min);
@@ -264,21 +271,37 @@ void SettingsWindow::OnMouseMove(int x, int y) {
 }
 
 void SettingsWindow::OnLButtonDown(int x, int y) {
+    // Tabs
     for (size_t i = 0; i < m_categories.size(); ++i) {
-        float ty = static_cast<float>(PADDING + i * 40);
-        if (x < TAB_WIDTH && y >= ty && y < ty + 36) { m_activeCategory = static_cast<int>(i); InvalidateRect(m_hwnd, nullptr, FALSE); return; }
+        float ty = PADDING + i * 40;
+        if (x < TAB_WIDTH && y >= ty && y < ty + 36) {
+            m_activeCategory = static_cast<int>(i);
+            InvalidateRect(m_hwnd, nullptr, FALSE);
+            return;
+        }
     }
     int hit = HitTest(x, y);
     if (hit < 0) return;
     auto& c = m_controls[hit];
-    if (c.type == ControlType::Toggle) { c.boolValue = !c.boolValue; ApplyControlValue(c); }
-    else if (c.type == ControlType::Button && c.onClick) { c.onClick(); }
-    else if (c.type == ControlType::Slider) { m_dragging = true; m_dragControl = hit; }
-    else if (c.type == ControlType::Dropdown) { c.selectedIndex = (c.selectedIndex + 1) % static_cast<int>(c.options.size()); ApplyControlValue(c); }
+    if (c.type == ControlType::Toggle) {
+        c.boolValue = !c.boolValue;
+        ApplyControlValue(c);
+    } else if (c.type == ControlType::Button && c.onClick) {
+        c.onClick();
+    } else if (c.type == ControlType::Slider) {
+        m_dragging = true;
+        m_dragControl = hit;
+    } else if (c.type == ControlType::Dropdown) {
+        c.selectedIndex = (c.selectedIndex + 1) % static_cast<int>(c.options.size());
+        ApplyControlValue(c);
+    }
     InvalidateRect(m_hwnd, nullptr, FALSE);
 }
 
-void SettingsWindow::OnLButtonUp(int, int) { m_dragging = false; m_dragControl = -1; }
+void SettingsWindow::OnLButtonUp(int x, int y) {
+    m_dragging = false;
+    m_dragControl = -1;
+}
 
 int SettingsWindow::HitTest(int x, int y) {
     for (size_t i = 0; i < m_controls.size(); ++i) {
@@ -315,17 +338,17 @@ void SettingsWindow::ApplyControlValue(SettingControl& c) {
     } else if (c.id == "perfProfile") {
         std::string profiles[] = { "eco", "balanced", "performance", "custom" };
         cfg.performanceProfile = profiles[c.selectedIndex];
-        if (c.selectedIndex == 0) PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Eco);
+        if (c.selectedIndex == 0) PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::PowerSaver);
         else if (c.selectedIndex == 1) PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Balanced);
         else if (c.selectedIndex == 2) PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Performance);
-        else PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Custom);
+        else PerformanceProfileManager::Instance().SetProfile(PerformanceProfile::Adaptive);
     } else if (c.id == "multiMonitor") {
         cfg.multiMonitorMode = (c.selectedIndex == 1) ? "all" : "primary";
     }
     Config::Instance().SaveToFile();
 }
 
-void SettingsWindow::RefreshValues() { SyncValuesFromConfig(); InvalidateRect(m_hwnd, nullptr, FALSE); }
-void SettingsWindow::OnSettingChanged(std::function<void(const std::string&, const std::string&)> cb) { m_onChanged = cb; }
-void SettingsWindow::ApplySettings() { SyncValuesFromConfig(); }
-void SettingsWindow::Update(float) {}
+void SettingsWindow::RefreshValues() {
+    SyncValuesFromConfig();
+    InvalidateRect(m_hwnd, nullptr, FALSE);
+}

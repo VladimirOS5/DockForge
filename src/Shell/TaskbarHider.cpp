@@ -87,3 +87,7 @@ bool TaskbarHider::Restore() {
     LOG_INFO("Taskbar restored successfully");
     return true;
 }
+
+bool TaskbarHider::Show() {
+    return Restore();
+}

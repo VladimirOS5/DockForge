@@ -16,7 +16,7 @@ struct TrayIconInfo {
 class TrayIconManager {
 public:
     static TrayIconManager& Instance();
-    void Initialize();
+    void Initialize(HINSTANCE hInstance = nullptr);  // Optional owner for compatibility
     void Shutdown();
     void Refresh();
     std::vector<TrayIconInfo> GetIcons() const;
@@ -26,7 +26,7 @@ private:
     TrayIconManager() = default;
     HWND FindTrayToolbar();
     bool ReadTrayButtons(HWND hToolbar, std::vector<TrayIconInfo>& icons);
-    
+
     std::vector<TrayIconInfo> m_icons;
     std::function<void()> m_callback;
     UINT_PTR m_timerId = 0;

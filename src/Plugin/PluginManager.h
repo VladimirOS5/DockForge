@@ -18,7 +18,7 @@ struct WidgetBase {
 class PluginManager {
 public:
     static PluginManager& Instance();
-    void Initialize(ID2D1RenderTarget* rt, IDWriteFactory* wf, HWND dockHwnd);
+    void Initialize(ID2D1RenderTarget* rt = nullptr, IDWriteFactory* wf = nullptr, HWND dockHwnd = nullptr);
     void Shutdown();
     void LoadPlugins(const std::wstring& directory);
     void UnloadAll();
